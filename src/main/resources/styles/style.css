@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+.root {
+    -fx-background-color: rgba(2, 27, 126, 0.67);
+    -fx-background-radius: 15;
+    -fx-padding: 0;
+}
+
+.overlay {
+    -fx-background-color: transparent;
+    -fx-font-family: 'Roboto', 'Jaldi', sans-serif;
+}
+
+.title-bar {
+    -fx-background-color: black;
+    -fx-background-radius: 15 15 0 0;
+}
+
+.title-label {
+    -fx-text-fill: white;
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+
+.header-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-font-family: 'Roboto', sans-serif;
+}
+
+.button {
+    -fx-background-color: #4A4A4A;
+    -fx-text-fill: white;
+    -fx-background-radius: 15;
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-weight: 700;
+    -fx-font-size: 15px;
+    -fx-padding: 6 25 6 25;
+}
+.button:hover {
+    -fx-background-color: #5d6268;
+}
+.button:selected {
+    -fx-background-color: #707070;
+}
+
+.label {
+    -fx-text-fill: white;
+    -fx-font-family: 'Roboto', sans-serif;
+    -fx-font-size: 14px;
+}
+
+.separator {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-opacity: 0.3;
+}
+
+.control-button {
+    -fx-background-color: transparent;
+    -fx-padding: 2 6 2 6;
+}
+.control-button:hover {
+    -fx-background-color: #444;
+}
+
+.progress-indicator {
+    -fx-progress-color: white;
+}

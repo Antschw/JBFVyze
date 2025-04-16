@@ -1,4 +1,4 @@
-# BFVyze - Real-Time Battlefield V Overlay
+ BFVyze - Real-Time Battlefield V Overlay
 
 ## Project Overview
 BFVyze is a Java 21-based real-time overlay application for Battlefield V. It displays server statistics and highlights suspicious players. The application uses OCR (Tess4J) to extract server data from screenshots, communicates with external APIs (GameTools, BFVHackers), and provides an intuitive JavaFX GUI. The application adheres to SOLID principles, uses Hexagonal Architecture, supports i18n, and is distributed as a standalone Windows executable.

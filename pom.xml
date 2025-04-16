@@ -12,9 +12,16 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21</javafx.version>
+        <javafx.version>21.0.2</javafx.version>
     </properties>
+
     <dependencies>
+        <dependency>
+            <groupId>fr.antschw</groupId>
+            <artifactId>bfvocr</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- JavaFX -->
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -27,11 +34,52 @@
             <version>${javafx.version}</version>
         </dependency>
 
+        <!-- JSON -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20250107</version>
+        </dependency>
+
+        <!-- URL Builder -->
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.4.2</version>
+        </dependency>
+
+        <!-- Guice (dependency injection)
+             CVE-2023-2976 noted, no immediate threat in desktop app context.
+             Monitor for future updates post 7.0.0.
+         -->
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>7.0.0</version>
+        </dependency>
+
+        <!-- Icons library -->
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-javafx</artifactId>
+            <version>12.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-materialdesign2-pack</artifactId>
+            <version>12.3.1</version>
+        </dependency>
+
         <!-- Tess4J (Tesseract OCR) -->
         <dependency>
             <groupId>net.sourceforge.tess4j</groupId>
             <artifactId>tess4j</artifactId>
             <version>5.15.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>opencv-platform</artifactId>
+            <version>4.10.0-1.5.11</version>
         </dependency>
 
         <!-- JNativeHook (keyboard hooks) -->
@@ -41,11 +89,18 @@
             <version>2.2.2</version>
         </dependency>
 
-        <!-- Logging -->
+        <!-- Tests -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>2.0.17</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.12.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.16.1</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -67,7 +122,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>fr.antschw.bfv.Main</mainClass>
+                    <mainClass>fr.antschw.bfv.adapters.input.ui.BFVyzeApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
