@@ -5,7 +5,9 @@ import com.google.inject.Injector;
 import fr.antschw.bfv.adapters.input.window.ResizeController;
 import fr.antschw.bfv.adapters.input.window.TitleBarController;
 import fr.antschw.bfv.adapters.input.window.WindowManager;
+import fr.antschw.bfv.application.port.UserStatsCachePort;
 import fr.antschw.bfv.common.constants.UIConstants;
+import fr.antschw.bfv.infrastructure.cache.JsonUserStatsCacheAdapter;
 import fr.antschw.bfv.infrastructure.config.HotkeyModule;
 import fr.antschw.bfv.infrastructure.config.ScanModule;
 import fr.antschw.bfv.infrastructure.config.ServerScanUiModule;
@@ -27,10 +29,12 @@ public class BFVyzeApplication extends Application {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(BFVyzeApplication.class.getName());
 
+    private Injector injector;
+
     @Override
     public void start(Stage primaryStage) {
         // DI setup
-        Injector injector = Guice.createInjector(
+        injector = Guice.createInjector(
                 new ScanModule(),
                 new HotkeyModule(),
                 new ServerScanUiModule()
@@ -66,8 +70,25 @@ public class BFVyzeApplication extends Application {
     public void stop() throws Exception {
         super.stop();
 
-        BFVOcrFactory.shutdown();
+        // Maintenant l'injecteur est accessible ici
+        if (injector != null) {
+            try {
+                UserStatsCachePort cacheAdapter = injector.getInstance(UserStatsCachePort.class);
+                LOGGER.info("Attempting to save cache to disk...");
 
+                if (cacheAdapter instanceof JsonUserStatsCacheAdapter jsonCache) {
+                    jsonCache.saveToDisk();
+                    LOGGER.info("Cache saved successfully");
+                } else {
+                    LOGGER.warn("Cache adapter is not of expected type: {}",
+                            (cacheAdapter != null ? cacheAdapter.getClass().getName() : "null"));
+                }
+            } catch (Exception e) {
+                LOGGER.error("Error saving cache: {}", e.getMessage(), e);
+            }
+        }
+
+        BFVOcrFactory.shutdown();
         LOGGER.info("Application stopped, OCR resources released");
     }
 
