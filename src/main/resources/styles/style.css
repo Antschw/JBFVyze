@@ -73,16 +73,6 @@
     -fx-padding: 5 0 5 0;
 }
 
-/* Style pour les joueurs suspects */
-.suspicious-player {
-    -fx-padding: 4 8 4 8;
-    -fx-background-color: rgba(231, 76, 60, 0.1);
-    -fx-background-radius: 4;
-    -fx-border-color: rgba(231, 76, 60, 0.3);
-    -fx-border-radius: 4;
-    -fx-border-width: 1;
-}
-
 /* Suspicious player rows in the TableView */
 .table-row-cell.suspicious-player {
     -fx-background-color: rgba(231, 76, 60, 0.1);

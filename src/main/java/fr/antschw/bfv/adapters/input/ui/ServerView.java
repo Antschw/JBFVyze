@@ -13,11 +13,13 @@ import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import com.google.inject.Inject;
 import javafx.application.Platform;
 import javafx.scene.control.Separator;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.geometry.Insets;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Orchestrates the scan flow by delegating to three panels:
@@ -27,7 +29,6 @@ public class ServerView {
 
     private final VBox root = new VBox(15);
     private final ServerScanService scanService;
-    private final HotkeyConfigurationService hotkeyConfig;
     private final PlayerStatsFilter playerStatsFilter;
     private final ScanControlPane controlPane;
     private final StatusPanel statusPane = new StatusPanel();
@@ -39,13 +40,13 @@ public class ServerView {
                       HotkeyListenerService hotkeyListener,
                       PlayerStatsFilter playerStatsFilter) {
         this.scanService = scanService;
-        this.hotkeyConfig = hotkeyConfig;
         this.playerStatsFilter = playerStatsFilter;
 
         controlPane = new ScanControlPane(hotkeyConfig, this::runScan);
         // Add 20px padding around all sides
         root.setPadding(new Insets(UIConstants.WINDOW_PADDING));
         root.getChildren().addAll(controlPane, statusPane, new Separator(), playersPane);
+        VBox.setVgrow(playersPane, Priority.ALWAYS);
 
         try {
             hotkeyListener.startListening(() -> Platform.runLater(this::runScan));
@@ -90,8 +91,10 @@ public class ServerView {
                         shortId,
                         player -> Platform.runLater(() -> playersPane.addPlayer(player.name())),
                         (player, stats) -> Platform.runLater(() -> {
-                            boolean suspicious = stats != null &&
-                                    !playerStatsFilter.getInterestingMetrics(stats).isEmpty();
+                            // Get the list of metrics that flagged this player
+                            List<String> metrics = stats != null
+                                    ? playerStatsFilter.getInterestingMetrics(stats)
+                                    : List.of();
 
                             playersPane.updatePlayer(
                                     player.name(),
@@ -99,7 +102,7 @@ public class ServerView {
                                     stats != null ? stats.killsPerMinute() : null,
                                     stats != null ? stats.rank() : null,
                                     stats != null ? stats.accuracy() : null,
-                                    suspicious
+                                    metrics
                             );
                         })
                 );
