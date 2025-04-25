@@ -5,13 +5,16 @@ import fr.antschw.bfv.utils.I18nUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
 
@@ -32,12 +35,29 @@ public class PlayersPanel extends VBox {
     private final ObservableList<PlayerTableRow> data = FXCollections.observableArrayList();
     private final Map<String,PlayerTableRow> rowMap = new HashMap<>();
 
+    // Compteur de joueurs suspects
+    private final Label countLabel = new Label("0");
+    private final ProgressIndicator countSpinner = new ProgressIndicator();
+
     public PlayersPanel() {
         this.setSpacing(6);
         this.setPadding(new Insets(10,0,0,0));
 
-        Label header = new Label(bundle.getString("server.result.players"));
-        header.getStyleClass().add("header-label");
+        // Créer l'en-tête avec le titre et le compteur
+        Label headerLabel = new Label(bundle.getString("server.result.players"));
+        headerLabel.getStyleClass().add("header-label");
+
+        // Configuration du spinner
+        countSpinner.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
+        countSpinner.setPrefSize(16, 16);
+        countSpinner.setVisible(false);
+
+        // Configuration du compteur
+        countLabel.getStyleClass().add("count-label");
+
+        // Mise en page horizontale pour l'en-tête
+        HBox header = new HBox(10, headerLabel, countLabel, countSpinner);
+        header.setAlignment(Pos.CENTER_LEFT);
 
         // Table setup
         table.setItems(data);
@@ -163,6 +183,10 @@ public class PlayersPanel extends VBox {
         data.clear();
         rowMap.clear();
 
+        // Réinitialiser le compteur et afficher le spinner
+        countLabel.setText("0");
+        countSpinner.setVisible(true);
+
         // show an indeterminate ProgressBar *inside* the table area
         ProgressBar waiter = new ProgressBar(ProgressBar.INDETERMINATE_PROGRESS);
         waiter.setPrefWidth(200);
@@ -179,7 +203,7 @@ public class PlayersPanel extends VBox {
     }
 
     /**
-     * Update a player’s stats — or mark error if kd==null.
+     * Update a player's stats — or mark error if kd==null.
      * Also records the list of interesting metrics for per-cell highlighting.
      */
     public void updatePlayer(String name,
@@ -206,10 +230,18 @@ public class PlayersPanel extends VBox {
                 .comparing(PlayerTableRow::isSuspicious).reversed()
                 .thenComparing(PlayerTableRow::getName, String.CASE_INSENSITIVE_ORDER)
         );
+
+        // Mettre à jour le compteur de joueurs suspects
+        long suspiciousCount = data.stream()
+                .filter(PlayerTableRow::isSuspicious)
+                .count();
+
+        countLabel.setText(String.valueOf(suspiciousCount));
     }
 
     /** Called when all fetching is done. */
     public void finishLoading() {
         table.setPlaceholder(new Label(bundle.getString("server.players.empty")));
+        countSpinner.setVisible(false);
     }
 }

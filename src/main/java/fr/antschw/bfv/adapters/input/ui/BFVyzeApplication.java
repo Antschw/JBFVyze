@@ -9,6 +9,7 @@ import fr.antschw.bfv.common.constants.UIConstants;
 import fr.antschw.bfv.infrastructure.config.HotkeyModule;
 import fr.antschw.bfv.infrastructure.config.ScanModule;
 import fr.antschw.bfv.infrastructure.config.ServerScanUiModule;
+import fr.antschw.bfvocr.api.BFVOcrFactory;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -59,6 +60,15 @@ public class BFVyzeApplication extends Application {
 
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    @Override
+    public void stop() throws Exception {
+        super.stop();
+
+        BFVOcrFactory.shutdown();
+
+        LOGGER.info("Application stopped, OCR resources released");
     }
 
     public static void main(String[] args) {

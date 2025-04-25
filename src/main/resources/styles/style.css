@@ -94,3 +94,21 @@
     -fx-background-color: -color-base-4;
     -fx-cursor: hand;
 }
+
+.count-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-danger-5;
+    -fx-padding: 0 0 0 10px;
+}
+
+.history-panel {
+    -fx-background-color: -color-neutral-subtle;
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+    -fx-border-color: -color-border-subtle;
+    -fx-border-width: 1px;
+}
+
+.history-list .list-cell {
+    -fx-padding: 2px 6px;
+}

@@ -72,13 +72,22 @@ public class StatusPanel extends HBox {
 
         // --- Configure history box ---
         historyTitle.getStyleClass().add("header-label");
-        historyList.setPrefWidth(80);
-        historyList.setFixedCellSize(22);               // serrer les lignes
+
+        // Fixer la taille de la liste d'historique
+        historyList.setPrefWidth(120); // Largeur fixe
+        historyList.setMaxWidth(120);  // Limite max
+        historyList.setPrefHeight(120); // Hauteur fixe
+        historyList.setMaxHeight(120);  // Limite max
+        historyList.setFixedCellSize(22); // serrer les lignes
         historyList.getStyleClass().add("history-list"); // pour padding réduit
 
         VBox historyBox = new VBox(4, historyTitle, historyList);
         historyBox.getStyleClass().add("history-panel");
         historyBox.setPadding(new Insets(0, 4, 4, 4));
+        historyBox.setPrefWidth(130); // Largeur fixe pour le VBox
+        historyBox.setMaxWidth(130);  // Maximum width
+
+        // Empêcher le redimensionnement
         HBox.setHgrow(historyBox, Priority.NEVER);
 
         // --- Assemble ---

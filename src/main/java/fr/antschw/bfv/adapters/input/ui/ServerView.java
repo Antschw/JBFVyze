@@ -1,6 +1,5 @@
 package fr.antschw.bfv.adapters.input.ui;
 
-import fr.antschw.bfv.adapters.input.window.HistoryPane;
 import fr.antschw.bfv.adapters.input.window.PlayersPanel;
 import fr.antschw.bfv.adapters.input.window.ScanControlPane;
 import fr.antschw.bfv.adapters.input.window.StatusPanel;
@@ -45,9 +44,13 @@ public class ServerView {
 
         controlPane = new ScanControlPane(hotkeyConfig, this::runScan);
         root.setPadding(new Insets(UIConstants.WINDOW_PADDING));
-        HistoryPane historyPane = new HistoryPane();
-        root.getChildren().addAll(controlPane, historyPane, statusPane, new Separator(), playersPane);
+
+        // Ajout des composants avec séparateur
+        root.getChildren().addAll(controlPane, statusPane, new Separator(), playersPane);
+
+        // Le PlayersPanel doit être le seul à s'étendre
         VBox.setVgrow(playersPane, Priority.ALWAYS);
+        VBox.setVgrow(statusPane, Priority.NEVER);
 
         try {
             hotkeyListener.startListening(() -> Platform.runLater(this::runScan));
