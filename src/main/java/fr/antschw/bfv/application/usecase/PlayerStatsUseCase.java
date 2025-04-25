@@ -3,10 +3,11 @@ package fr.antschw.bfv.application.usecase;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+import fr.antschw.bfv.application.port.UserStatsCachePort;
 import fr.antschw.bfv.domain.model.ServerPlayers;
 import fr.antschw.bfv.domain.model.UserStats;
-import fr.antschw.bfv.domain.service.ApiClient;
 import fr.antschw.bfv.domain.service.ApiRequestException;
+import fr.antschw.bfv.domain.service.ServerPlayersClient;
 import fr.antschw.bfv.infrastructure.api.client.GameToolsPlayerApiClient;
 
 import static fr.antschw.bfv.common.constants.ApiConstants.GAMETOOLS_PLAYERS_NAME;
@@ -17,13 +18,15 @@ import static fr.antschw.bfv.common.constants.ApiConstants.GAMETOOLS_PLAYERS_NAM
 public class PlayerStatsUseCase {
 
     private final GameToolsPlayerApiClient playerApiClient;
+    private final UserStatsCachePort cache;
 
     /**
      * Constructor.
      */
     @Inject
-    public PlayerStatsUseCase(@Named(GAMETOOLS_PLAYERS_NAME) ApiClient playerApiClient) {
+    public PlayerStatsUseCase(@Named(GAMETOOLS_PLAYERS_NAME) ServerPlayersClient playerApiClient, UserStatsCachePort cache) {
         this.playerApiClient = (GameToolsPlayerApiClient) playerApiClient;
+        this.cache = cache;
     }
 
     /**
@@ -31,8 +34,9 @@ public class PlayerStatsUseCase {
      *
      * @param playerApiClient custom player API client
      */
-    public PlayerStatsUseCase(GameToolsPlayerApiClient playerApiClient) {
+    public PlayerStatsUseCase(GameToolsPlayerApiClient playerApiClient, UserStatsCachePort cache) {
         this.playerApiClient = playerApiClient;
+        this.cache = cache;
     }
 
     /**
@@ -46,15 +50,21 @@ public class PlayerStatsUseCase {
         return playerApiClient.fetchServerPlayers(serverId);
     }
 
-    /**
-     * Gets statistics for a player by name.
-     *
-     * @param playerName player name
-     * @return player statistics
-     * @throws ApiRequestException if the API request fails
-     */
-    public UserStats getPlayerStats(String playerName) throws ApiRequestException {
-        return playerApiClient.fetchUserStats(playerName);
-    }
 
+    /**
+     * Retrieves user stats, using cache when fresh.
+     */
+    public UserStats getPlayerStats(String playerName) {
+        return cache.getCachedStats(playerName)
+                .orElseGet(() -> {
+                    UserStats fresh;
+                    try {
+                        fresh = playerApiClient.fetchUserStats(playerName);
+                    } catch (ApiRequestException e) {
+                        throw new RuntimeException(e);
+                    }
+                    cache.putStats(fresh);
+                    return fresh;
+                });
+    }
 }

@@ -1,5 +1,6 @@
 package fr.antschw.bfv.adapters.input.ui;
 
+import fr.antschw.bfv.adapters.input.window.HistoryPane;
 import fr.antschw.bfv.adapters.input.window.PlayersPanel;
 import fr.antschw.bfv.adapters.input.window.ScanControlPane;
 import fr.antschw.bfv.adapters.input.window.StatusPanel;
@@ -43,9 +44,9 @@ public class ServerView {
         this.playerStatsFilter = playerStatsFilter;
 
         controlPane = new ScanControlPane(hotkeyConfig, this::runScan);
-        // Add 20px padding around all sides
         root.setPadding(new Insets(UIConstants.WINDOW_PADDING));
-        root.getChildren().addAll(controlPane, statusPane, new Separator(), playersPane);
+        HistoryPane historyPane = new HistoryPane();
+        root.getChildren().addAll(controlPane, historyPane, statusPane, new Separator(), playersPane);
         VBox.setVgrow(playersPane, Priority.ALWAYS);
 
         try {
@@ -66,9 +67,11 @@ public class ServerView {
             try {
                 // 1) OCR
                 String shortId = scanService.extractServerId();
-                Platform.runLater(() ->
-                        statusPane.setOcrStatus("OCR: #" + shortId, false)
-                );
+                Platform.runLater(() -> {
+                    statusPane.addToHistory(shortId);
+                    statusPane.setOcrStatus("OCR: #" + shortId, false);
+                });
+
 
                 // 2) GameTools
                 var info = scanService.queryGameTools(shortId);

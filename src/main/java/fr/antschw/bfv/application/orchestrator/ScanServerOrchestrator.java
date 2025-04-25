@@ -1,11 +1,11 @@
 package fr.antschw.bfv.application.orchestrator;
 
 import fr.antschw.bfv.domain.model.ServerInfo;
-import fr.antschw.bfv.domain.service.ApiClient;
 import fr.antschw.bfv.domain.service.ApiRequestException;
 import fr.antschw.bfv.domain.service.HotkeyListenerException;
 import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.domain.service.ScreenshotService;
+import fr.antschw.bfv.domain.service.ServerInfoClient;
 import fr.antschw.bfvocr.api.BFVOcrFactory;
 import fr.antschw.bfvocr.api.BFVOcrService;
 import fr.antschw.bfvocr.exceptions.BFVOcrException;
@@ -30,27 +30,28 @@ public class ScanServerOrchestrator {
     private final HotkeyListenerService hotkeyListenerService;
     private final ScreenshotService screenshotService;
     private final BFVOcrService ocrService;
-    private final ApiClient gameToolsApiClient;
-    private final ApiClient bfvHackersApiClient;
+    private final ServerInfoClient gameToolsApiClient;
+    private final ServerInfoClient bfvHackersApiClient;
 
     /**
      * Constructor with dependency injection.
      *
      * @param hotkeyListenerService service listening for hotkey
      * @param screenshotService     service capturing screenshots
-     * @param gameToolsApiClient    Gametools API client for server info
-     * @param bfvHackersApiClient   BFV Hackers API client for cheater information
+     * @param gameToolsInfoClient    Gametools API client for server info
+     * @param bfvHackersInfoClient   BFV Hackers API client for cheater information
      */
     @Inject
     public ScanServerOrchestrator(HotkeyListenerService hotkeyListenerService,
                                   ScreenshotService screenshotService,
-                                  @Named(GAMETOOLS_NAME) ApiClient gameToolsApiClient,
-                                  @Named(BFVHACKERS_NAME) ApiClient bfvHackersApiClient) {
+                                  @Named(GAMETOOLS_NAME) ServerInfoClient gameToolsInfoClient,
+                                  @Named(BFVHACKERS_NAME) ServerInfoClient bfvHackersInfoClient
+    ) {
         this.hotkeyListenerService = hotkeyListenerService;
         this.screenshotService = screenshotService;
         this.ocrService = BFVOcrFactory.createDefaultService();
-        this.gameToolsApiClient = gameToolsApiClient;
-        this.bfvHackersApiClient = bfvHackersApiClient;
+        this.gameToolsApiClient = gameToolsInfoClient;
+        this.bfvHackersApiClient = bfvHackersInfoClient;
     }
 
     /**

@@ -5,7 +5,6 @@ import com.google.inject.name.Named;
 import javafx.application.Platform;
 
 import fr.antschw.bfv.application.usecase.PlayerStatsUseCase;
-import fr.antschw.bfv.domain.model.InterestingPlayer;
 import fr.antschw.bfv.domain.model.ServerInfo;
 import fr.antschw.bfv.domain.model.ServerPlayer;
 import fr.antschw.bfv.domain.model.ServerPlayers;
@@ -34,8 +33,8 @@ public class ServerScanService {
 
     private final ScreenshotService screenshotService;
     private final BFVOcrService ocrService;
-    private final ApiClient gameToolsApiClient;
-    private final ApiClient bfvHackersApiClient;
+    private final ServerInfoClient gameToolsInfoClient;
+    private final ServerInfoClient bfvHackersInfoClient;
     private final PlayerStatsUseCase playerStatsUseCase;
     private final PlayerStatsFilter playerStatsFilter;
     private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ServerScanService.class);
@@ -47,15 +46,15 @@ public class ServerScanService {
     public ServerScanService(
             ScreenshotService screenshotService,
             BFVOcrService ocrService,
-            @Named(GAMETOOLS_NAME) ApiClient gameToolsApiClient,
-            @Named(BFVHACKERS_NAME) ApiClient bfvHackersApiClient,
+            @Named(GAMETOOLS_NAME) ServerInfoClient gameToolsInfoClient,
+            @Named(BFVHACKERS_NAME) ServerInfoClient bfvHackersInfoClient,
             PlayerStatsUseCase playerStatsUseCase,
             PlayerStatsFilter playerStatsFilter
     ) {
         this.screenshotService = screenshotService;
         this.ocrService = ocrService;
-        this.gameToolsApiClient = gameToolsApiClient;
-        this.bfvHackersApiClient = bfvHackersApiClient;
+        this.gameToolsInfoClient   = gameToolsInfoClient;
+        this.bfvHackersInfoClient  = bfvHackersInfoClient;
         this.playerStatsUseCase = playerStatsUseCase;
         this.playerStatsFilter = playerStatsFilter;
     }
@@ -84,7 +83,7 @@ public class ServerScanService {
      * @throws Exception if query fails
      */
     public ServerInfo queryGameTools(String shortId) throws Exception {
-        return gameToolsApiClient.fetchServerInfo(shortId);
+        return gameToolsInfoClient.fetchServerInfo(shortId);
     }
 
     /**
@@ -96,7 +95,7 @@ public class ServerScanService {
      * @throws Exception if query fails
      */
     public ServerInfo queryBfvHackers(String longId, ServerInfo baseInfo) throws Exception {
-        ServerInfo hackersInfo = bfvHackersApiClient.fetchServerInfo(longId);
+        ServerInfo hackersInfo = bfvHackersInfoClient.fetchServerInfo(longId);
         return new ServerInfo(
                 baseInfo.serverName(),
                 baseInfo.shortServerId(),
@@ -106,33 +105,10 @@ public class ServerScanService {
     }
 
     /**
-     * Queries all players from the server and filters those with suspicious stats.
-     *
-     * @param shortId OCR-detected short ID
-     */
-    public void queryPlayers(String shortId, Consumer<InterestingPlayer> callback) {
-        List<InterestingPlayer> flagged = new ArrayList<>();
-        try {
-            ServerPlayers players = playerStatsUseCase.getServerPlayers(shortId);
-            for (ServerPlayer player : players.players()) {
-                try {
-                    UserStats stats = playerStatsUseCase.getPlayerStats(player.name());
-                    List<String> metrics = playerStatsFilter.getInterestingMetrics(stats);
-                    if (!metrics.isEmpty()) {
-                        InterestingPlayer flaggedPlayer = new InterestingPlayer(player.name(), metrics);
-                        flagged.add(flaggedPlayer);
-                        callback.accept(flaggedPlayer);
-                    }
-                } catch (Exception ignored) {}
-            }
-        } catch (Exception ignored) {}
-    }
-
-    /**
      * Queries all players from the server and processes their stats asynchronously.
      *
      * @param shortId OCR-detected short ID
-     * @param playerCallback callback for each player as they're loaded
+     * @param playerCallback callback for each player as they’re loaded
      * @param statsCallback callback for when a player's stats are loaded
      */
     public void queryPlayersAsync(String shortId,
@@ -151,7 +127,7 @@ public class ServerScanService {
                 CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                     try {
                         UserStats stats = playerStatsUseCase.getPlayerStats(player.name());
-                        List<String> metrics = playerStatsFilter.getInterestingMetrics(stats);
+                        playerStatsFilter.getInterestingMetrics(stats);
 
                         Platform.runLater(() -> statsCallback.accept(player, stats));
 

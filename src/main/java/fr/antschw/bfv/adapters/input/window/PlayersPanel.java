@@ -7,7 +7,6 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
