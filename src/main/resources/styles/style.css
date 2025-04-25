@@ -1,0 +1,91 @@
+/* style.css */
+
+/* Arrondissement des coins de la fenêtre principale */
+.root {
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+}
+
+/* Style de la barre de titre */
+.title-bar {
+    -fx-background-color: -color-accent-4;
+    -fx-background-radius: 10px 10px 0 0;
+    -fx-padding: 8px 10px;
+}
+
+.title-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+
+/* Boutons de contrôle dans la barre de titre */
+.control-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 50%;
+    -fx-padding: 5px;
+    -fx-cursor: hand;
+}
+
+.control-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Style pour les titres de section comme "Joueurs notables" */
+.header-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-text-fill: -color-accent-5;
+    -fx-padding: 5px 0;
+    -fx-border-color: transparent transparent -color-border-subtle transparent;
+    -fx-border-width: 0 0 1px 0;
+}
+
+/* Style pour le conteneur principal */
+.overlay {
+    -fx-background-radius: 0 0 10px 10px;
+}
+
+/* Styles pour les éléments de résultat du scan */
+.scan-label {
+    -fx-font-weight: bold;
+}
+
+.scan-success {
+    -fx-text-fill: -color-success-5;
+}
+
+.scan-danger {
+    -fx-text-fill: -color-danger-5;
+}
+
+.time-label {
+    -fx-font-weight: bold;
+}
+
+.player-item {
+    -fx-padding: 3px 0;
+}
+
+/* Style pour la liste des joueurs */
+.players-list {
+    -fx-spacing: 4;
+    -fx-padding: 5 0 5 0;
+}
+
+/* Style pour les joueurs suspects */
+.suspicious-player {
+    -fx-padding: 4 8 4 8;
+    -fx-background-color: rgba(231, 76, 60, 0.1);
+    -fx-background-radius: 4;
+    -fx-border-color: rgba(231, 76, 60, 0.3);
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+}
+
+/* Suspicious player rows in the TableView */
+.table-row-cell.suspicious-player {
+    -fx-background-color: rgba(231, 76, 60, 0.1);
+    -fx-border-color: rgba(231, 76, 60, 0.3);
+    -fx-border-width: 0 0 1px 0;
+}

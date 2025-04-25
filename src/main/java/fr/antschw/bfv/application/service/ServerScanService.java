@@ -2,6 +2,7 @@ package fr.antschw.bfv.application.service;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import javafx.application.Platform;
 
 import fr.antschw.bfv.application.usecase.PlayerStatsUseCase;
 import fr.antschw.bfv.domain.model.InterestingPlayer;
@@ -17,6 +18,10 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static fr.antschw.bfv.common.constants.ApiConstants.BFVHACKERS_NAME;
@@ -33,6 +38,7 @@ public class ServerScanService {
     private final ApiClient bfvHackersApiClient;
     private final PlayerStatsUseCase playerStatsUseCase;
     private final PlayerStatsFilter playerStatsFilter;
+    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ServerScanService.class);
 
     /**
      * Constructs the server scan service with all required dependencies.
@@ -120,6 +126,51 @@ public class ServerScanService {
                 } catch (Exception ignored) {}
             }
         } catch (Exception ignored) {}
+    }
+
+    /**
+     * Queries all players from the server and processes their stats asynchronously.
+     *
+     * @param shortId OCR-detected short ID
+     * @param playerCallback callback for each player as they're loaded
+     * @param statsCallback callback for when a player's stats are loaded
+     */
+    public void queryPlayersAsync(String shortId,
+                                  Consumer<ServerPlayer> playerCallback,
+                                  BiConsumer<ServerPlayer, UserStats> statsCallback) {
+        ExecutorService executor = Executors.newFixedThreadPool(5); // 5 threads pour les requêtes parallèles
+
+        try {
+            ServerPlayers players = playerStatsUseCase.getServerPlayers(shortId);
+
+            List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+            for (ServerPlayer player : players.players()) {
+                Platform.runLater(() -> playerCallback.accept(player));
+
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    try {
+                        UserStats stats = playerStatsUseCase.getPlayerStats(player.name());
+                        List<String> metrics = playerStatsFilter.getInterestingMetrics(stats);
+
+                        Platform.runLater(() -> statsCallback.accept(player, stats));
+
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to fetch stats for player {}: {}", player.name(), e.getMessage());
+                        Platform.runLater(() -> statsCallback.accept(player, null));
+                    }
+                }, executor);
+
+                futures.add(future);
+            }
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+
+        } catch (Exception e) {
+            LOGGER.error("Error fetching players list: {}", e.getMessage());
+        } finally {
+            executor.shutdown();
+        }
     }
 
 }

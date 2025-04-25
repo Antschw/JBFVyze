@@ -1,6 +1,5 @@
 package fr.antschw.bfv.adapters.input.ui;
 
-import atlantafx.base.theme.PrimerLight;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import fr.antschw.bfv.adapters.input.window.ResizeController;
@@ -36,8 +35,7 @@ public class BFVyzeApplication extends Application {
                 new ServerScanUiModule()
         );
 
-        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
-
+        Application.setUserAgentStylesheet(new atlantafx.base.theme.PrimerLight().getUserAgentStylesheet());
         MainController mainController = injector.getInstance(MainController.class);
 
         BorderPane root = new BorderPane();

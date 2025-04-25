@@ -6,6 +6,8 @@ import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
@@ -61,8 +63,8 @@ public class TitleBarController {
         button.setOnAction(e -> {
             darkMode = !darkMode;
             Application.setUserAgentStylesheet(darkMode
-                    ? new PrimerDark().getUserAgentStylesheet()
-                    : new PrimerLight().getUserAgentStylesheet());
+                    ? new atlantafx.base.theme.Dracula().getUserAgentStylesheet()
+                    : new atlantafx.base.theme.PrimerLight().getUserAgentStylesheet());
             updateThemeIcon(button);
         });
         return button;
