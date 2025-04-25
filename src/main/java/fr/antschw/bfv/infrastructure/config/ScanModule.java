@@ -6,6 +6,7 @@ import fr.antschw.bfv.application.orchestrator.ScanServerOrchestrator;
 import fr.antschw.bfv.domain.service.*;
 import fr.antschw.bfv.infrastructure.api.client.BfvHackersApiClient;
 import fr.antschw.bfv.infrastructure.api.client.GameToolsApiClient;
+import fr.antschw.bfv.infrastructure.api.client.GameToolsPlayerApiClient;
 import fr.antschw.bfv.infrastructure.api.model.ApiType;
 import fr.antschw.bfv.infrastructure.screenshot.AwtRobotScreenshotAdapter;
 
@@ -27,6 +28,10 @@ public class ScanModule extends AbstractModule {
         bind(ApiClient.class)
                 .annotatedWith(Names.named(ApiType.BFVHACKERS.getName()))
                 .to(BfvHackersApiClient.class);
+
+        bind(ApiClient.class)
+                .annotatedWith(Names.named(ApiType.GAMETOOLS_PLAYERS.getName()))
+                .to(GameToolsPlayerApiClient.class);
 
         // Orchestrator
         bind(ScanServerOrchestrator.class);

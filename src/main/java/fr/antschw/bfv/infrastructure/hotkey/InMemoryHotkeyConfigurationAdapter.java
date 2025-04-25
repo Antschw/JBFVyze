@@ -1,6 +1,5 @@
 package fr.antschw.bfv.infrastructure.hotkey;
 
-import fr.antschw.bfv.common.constants.HotkeyConstants;
 import fr.antschw.bfv.domain.model.HotkeyConfiguration;
 import fr.antschw.bfv.domain.service.HotkeyConfigurationService;
 
@@ -9,11 +8,12 @@ import fr.antschw.bfv.domain.service.HotkeyConfigurationService;
  */
 public class InMemoryHotkeyConfigurationAdapter implements HotkeyConfigurationService {
 
+    private static final String DEFAULT_HOTKEY = "F12";
     private final HotkeyConfiguration configuration;
     private Runnable onUpdate;
 
     public InMemoryHotkeyConfigurationAdapter() {
-        this.configuration = new HotkeyConfiguration(HotkeyConstants.DEFAULT_HOTKEY);
+        this.configuration = new HotkeyConfiguration(DEFAULT_HOTKEY);
     }
 
     @Override

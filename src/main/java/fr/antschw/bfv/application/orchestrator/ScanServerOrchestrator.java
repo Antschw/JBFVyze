@@ -1,22 +1,24 @@
 package fr.antschw.bfv.application.orchestrator;
 
-import fr.antschw.bfv.common.constants.ScanConstants;
 import fr.antschw.bfv.domain.model.ServerInfo;
+import fr.antschw.bfv.domain.service.ApiClient;
 import fr.antschw.bfv.domain.service.ApiRequestException;
 import fr.antschw.bfv.domain.service.HotkeyListenerException;
 import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.domain.service.ScreenshotService;
-import fr.antschw.bfv.infrastructure.api.client.BfvHackersApiClient;
-import fr.antschw.bfv.infrastructure.api.client.GameToolsApiClient;
 import fr.antschw.bfvocr.api.BFVOcrFactory;
 import fr.antschw.bfvocr.api.BFVOcrService;
 import fr.antschw.bfvocr.exceptions.BFVOcrException;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.image.BufferedImage;
+
+import static fr.antschw.bfv.common.constants.ApiConstants.BFVHACKERS_NAME;
+import static fr.antschw.bfv.common.constants.ApiConstants.GAMETOOLS_NAME;
 
 /**
  * Orchestrates the complete server scanning process using the BFVOcrLibrary.
@@ -28,8 +30,8 @@ public class ScanServerOrchestrator {
     private final HotkeyListenerService hotkeyListenerService;
     private final ScreenshotService screenshotService;
     private final BFVOcrService ocrService;
-    private final GameToolsApiClient gameToolsApiClient;
-    private final BfvHackersApiClient bfvHackersApiClient;
+    private final ApiClient gameToolsApiClient;
+    private final ApiClient bfvHackersApiClient;
 
     /**
      * Constructor with dependency injection.
@@ -42,8 +44,8 @@ public class ScanServerOrchestrator {
     @Inject
     public ScanServerOrchestrator(HotkeyListenerService hotkeyListenerService,
                                   ScreenshotService screenshotService,
-                                  GameToolsApiClient gameToolsApiClient,
-                                  BfvHackersApiClient bfvHackersApiClient) {
+                                  @Named(GAMETOOLS_NAME) ApiClient gameToolsApiClient,
+                                  @Named(BFVHACKERS_NAME) ApiClient bfvHackersApiClient) {
         this.hotkeyListenerService = hotkeyListenerService;
         this.screenshotService = screenshotService;
         this.ocrService = BFVOcrFactory.createDefaultService();
@@ -57,7 +59,7 @@ public class ScanServerOrchestrator {
      * @throws HotkeyListenerException if listener setup fails
      */
     public void start() throws HotkeyListenerException {
-        LOGGER.info(ScanConstants.SCAN_START_MESSAGE);
+        LOGGER.info("Starting server scan...");
         hotkeyListenerService.startListening(this::scanServer);
     }
 
@@ -71,27 +73,27 @@ public class ScanServerOrchestrator {
             LOGGER.info("Extracted server ID: {}", serverId);
 
             ServerInfo gameToolsInfo = gameToolsApiClient.fetchServerInfo(serverId);
-            LOGGER.info("Server: {}, Long ID: {}", gameToolsInfo.getServerName(), gameToolsInfo.getLongServerId());
+            LOGGER.info("Server: {}, Long ID: {}", gameToolsInfo.serverName(), gameToolsInfo.longServerId());
 
-            ServerInfo hackersInfo = bfvHackersApiClient.fetchServerInfo(String.valueOf(gameToolsInfo.getLongServerId()));
-            LOGGER.info("Cheaters detected: {}", hackersInfo.getCheaterCount());
+            ServerInfo hackersInfo = bfvHackersApiClient.fetchServerInfo(String.valueOf(gameToolsInfo.longServerId()));
+            LOGGER.info("Cheaters detected: {}", hackersInfo.cheaterCount());
 
             // Combine the two
             ServerInfo completeInfo = new ServerInfo(
-                    gameToolsInfo.getServerName(),
-                    gameToolsInfo.getShortServerId(),
-                    gameToolsInfo.getLongServerId(),
-                    hackersInfo.getCheaterCount()
+                    gameToolsInfo.serverName(),
+                    gameToolsInfo.shortServerId(),
+                    gameToolsInfo.longServerId(),
+                    hackersInfo.cheaterCount()
             );
 
             LOGGER.info("Server {}, Short ID: {}, Long ID: {}, Cheaters: {}",
-                    completeInfo.getServerName(),
-                    completeInfo.getShortServerId(),
-                    completeInfo.getLongServerId(),
-                    completeInfo.getCheaterCount()
+                    completeInfo.serverName(),
+                    completeInfo.shortServerId(),
+                    completeInfo.longServerId(),
+                    completeInfo.cheaterCount()
             );
 
-            LOGGER.info(ScanConstants.SCAN_SUCCESS_MESSAGE);
+            LOGGER.info("Scan completed successfully.");
 
         } catch (BFVOcrException e) {
             LOGGER.error("OCR processing failed: {}", e.getMessage(), e);

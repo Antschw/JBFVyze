@@ -1,12 +1,12 @@
 package fr.antschw.bfv.adapters.input.ui;
 
+import atlantafx.base.theme.PrimerLight;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import fr.antschw.bfv.adapters.input.window.ResizeController;
 import fr.antschw.bfv.adapters.input.window.TitleBarController;
 import fr.antschw.bfv.adapters.input.window.WindowManager;
 import fr.antschw.bfv.common.constants.UIConstants;
-import fr.antschw.bfv.infrastructure.config.ApiModule;
 import fr.antschw.bfv.infrastructure.config.HotkeyModule;
 import fr.antschw.bfv.infrastructure.config.ScanModule;
 import fr.antschw.bfv.infrastructure.config.ServerScanUiModule;
@@ -31,11 +31,12 @@ public class BFVyzeApplication extends Application {
     public void start(Stage primaryStage) {
         // DI setup
         Injector injector = Guice.createInjector(
-                new ApiModule(),
                 new ScanModule(),
                 new HotkeyModule(),
                 new ServerScanUiModule()
         );
+
+        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
         MainController mainController = injector.getInstance(MainController.class);
 
@@ -56,8 +57,7 @@ public class BFVyzeApplication extends Application {
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles/style.css")).toExternalForm());
         scene.setFill(Color.TRANSPARENT);
 
-        WindowManager windowManager = new WindowManager();
-        windowManager.configureStage(primaryStage);
+        new WindowManager().configureStage(primaryStage);
 
         primaryStage.setScene(scene);
         primaryStage.show();

@@ -59,9 +59,7 @@ public class JNativeHookHotkeyListenerAdapter implements HotkeyListenerService, 
     @Override
     public void nativeKeyPressed(NativeKeyEvent event) {
         String keyText = NativeKeyEvent.getKeyText(event.getKeyCode());
-        LOGGER.debug("Key pressed: {}", keyText);
 
-        // Toujours obtenir la configuration la plus récente
         String currentHotkey = configurationService.getConfiguration().getHotkey();
         if (keyText.equalsIgnoreCase(currentHotkey)) {
             LOGGER.info("Configured hotkey [{}] pressed.", currentHotkey);

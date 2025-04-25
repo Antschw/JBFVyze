@@ -24,22 +24,22 @@ public class PlayerStatsFilter {
     public List<String> getInterestingMetrics(UserStats stats) {
         List<String> matched = new ArrayList<>();
 
-        if (stats.getKillDeath() >= KD_THRESHOLD) {
-            matched.add("K/D >= " + KD_THRESHOLD + " → " + stats.getKillDeath());
+        if (stats.killDeath() >= KD_THRESHOLD) {
+            matched.add("K/D >= " + KD_THRESHOLD + " → " + stats.killDeath());
         }
 
-        if (stats.getKillsPerMinute() >= KPM_THRESHOLD) {
-            matched.add("KPM >= " + KPM_THRESHOLD + " → " + stats.getKillsPerMinute());
+        if (stats.killsPerMinute() >= KPM_THRESHOLD) {
+            matched.add("KPM >= " + KPM_THRESHOLD + " → " + stats.killsPerMinute());
         }
 
-        if (stats.getRank() == RANK_THRESHOLD) {
+        if (stats.rank() == RANK_THRESHOLD) {
             matched.add("Rank = " + RANK_THRESHOLD);
         }
 
         try {
-            double accuracy = Double.parseDouble(stats.getAccuracy().replace("%", ""));
+            double accuracy = Double.parseDouble(stats.accuracy().replace("%", ""));
             if (accuracy >= ACCURACY_THRESHOLD) {
-                matched.add("Accuracy >= " + ACCURACY_THRESHOLD + "% → " + stats.getAccuracy());
+                matched.add("Accuracy >= " + ACCURACY_THRESHOLD + "% → " + stats.accuracy());
             }
         } catch (NumberFormatException ignored) {
             // Skip if parsing fails

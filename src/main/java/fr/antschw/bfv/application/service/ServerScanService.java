@@ -19,6 +19,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import static fr.antschw.bfv.common.constants.ApiConstants.BFVHACKERS_NAME;
+import static fr.antschw.bfv.common.constants.ApiConstants.GAMETOOLS_NAME;
+
 /**
  * Provides each stage of the scan pipeline as isolated methods.
  */
@@ -38,8 +41,8 @@ public class ServerScanService {
     public ServerScanService(
             ScreenshotService screenshotService,
             BFVOcrService ocrService,
-            @Named("GameTools") ApiClient gameToolsApiClient,
-            @Named("BFVHackers") ApiClient bfvHackersApiClient,
+            @Named(GAMETOOLS_NAME) ApiClient gameToolsApiClient,
+            @Named(BFVHACKERS_NAME) ApiClient bfvHackersApiClient,
             PlayerStatsUseCase playerStatsUseCase,
             PlayerStatsFilter playerStatsFilter
     ) {
@@ -89,10 +92,10 @@ public class ServerScanService {
     public ServerInfo queryBfvHackers(String longId, ServerInfo baseInfo) throws Exception {
         ServerInfo hackersInfo = bfvHackersApiClient.fetchServerInfo(longId);
         return new ServerInfo(
-                baseInfo.getServerName(),
-                baseInfo.getShortServerId(),
-                baseInfo.getLongServerId(),
-                hackersInfo.getCheaterCount()
+                baseInfo.serverName(),
+                baseInfo.shortServerId(),
+                baseInfo.longServerId(),
+                hackersInfo.cheaterCount()
         );
     }
 
@@ -100,25 +103,23 @@ public class ServerScanService {
      * Queries all players from the server and filters those with suspicious stats.
      *
      * @param shortId OCR-detected short ID
-     * @return list of interesting players
      */
-    public List<InterestingPlayer> queryPlayers(String shortId, Consumer<InterestingPlayer> callback) {
+    public void queryPlayers(String shortId, Consumer<InterestingPlayer> callback) {
         List<InterestingPlayer> flagged = new ArrayList<>();
         try {
             ServerPlayers players = playerStatsUseCase.getServerPlayers(shortId);
-            for (ServerPlayer player : players.getPlayers()) {
+            for (ServerPlayer player : players.players()) {
                 try {
-                    UserStats stats = playerStatsUseCase.getPlayerStats(player.getName());
+                    UserStats stats = playerStatsUseCase.getPlayerStats(player.name());
                     List<String> metrics = playerStatsFilter.getInterestingMetrics(stats);
                     if (!metrics.isEmpty()) {
-                        InterestingPlayer flaggedPlayer = new InterestingPlayer(player.getName(), metrics);
+                        InterestingPlayer flaggedPlayer = new InterestingPlayer(player.name(), metrics);
                         flagged.add(flaggedPlayer);
                         callback.accept(flaggedPlayer);
                     }
                 } catch (Exception ignored) {}
             }
         } catch (Exception ignored) {}
-        return flagged;
     }
 
 }

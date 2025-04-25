@@ -1,15 +1,27 @@
 package fr.antschw.bfv.utils;
 
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
  * Utility class for managing internationalization resource bundles.
  */
-public final class I18nUtils {
+public class I18nUtils {
+    private static Locale currentLocale = Locale.getDefault();
+    private static ResourceBundle bundle = loadBundle(currentLocale);
 
-    private static final ResourceBundle bundle = ResourceBundle.getBundle("i18n.messages_en");
+    private I18nUtils() {
+        // Prevent instantiation
+    }
 
-    private I18nUtils() {}
+    private static ResourceBundle loadBundle(Locale locale) {
+        return ResourceBundle.getBundle("i18n.messages", locale);
+    }
+
+    public static void setLocale(Locale locale) {
+        currentLocale = locale;
+        bundle = loadBundle(locale);
+    }
 
     /**
      * Retrieves a localized string by key.

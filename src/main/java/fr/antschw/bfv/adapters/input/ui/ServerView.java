@@ -1,14 +1,10 @@
 package fr.antschw.bfv.adapters.input.ui;
 
 import fr.antschw.bfv.application.service.ServerScanService;
-import fr.antschw.bfv.domain.model.InterestingPlayer;
 import fr.antschw.bfv.domain.service.HotkeyConfigurationService;
-import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.domain.service.HotkeyListenerException;
-import fr.antschw.bfv.infrastructure.hotkey.JNativeHookHotkeyListenerAdapter;
+import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.utils.I18nUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import javafx.application.Platform;
@@ -21,10 +17,11 @@ import javafx.scene.control.Separator;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.ResourceBundle;
 
 /**
@@ -38,7 +35,6 @@ public class ServerView {
 
     private final ServerScanService scanService;
     private final HotkeyConfigurationService hotkeyConfig;
-    private final HotkeyListenerService hotkeyListener;
 
     private final Label ocrStatusLabel = new Label();
     private final Label gameToolsStatusLabel = new Label();
@@ -69,7 +65,6 @@ public class ServerView {
     public ServerView(ServerScanService scanService, HotkeyConfigurationService hotkeyConfig, HotkeyListenerService hotkeyListener) {
         this.scanService = scanService;
         this.hotkeyConfig = hotkeyConfig;
-        this.hotkeyListener = hotkeyListener;
         this.view.setPadding(new Insets(20));
         this.view.getStyleClass().add("overlay");
         this.view.setOnKeyPressed(this::handleKeyPress);
@@ -93,12 +88,10 @@ public class ServerView {
 
         // Button
         updateScanButtonText();
-        hotkeyConfig.setOnHotkeyUpdated(() -> {
-            Platform.runLater(() -> {
-                updateScanButtonText();
-                activeHotkey = hotkeyConfig.getConfiguration().getHotkey();
-            });
-        });
+        hotkeyConfig.setOnHotkeyUpdated(() -> Platform.runLater(() -> {
+            updateScanButtonText();
+            activeHotkey = hotkeyConfig.getConfiguration().getHotkey();
+        }));
         scanButton.setOnAction(e -> runScan());
 
         // Spinner setup
@@ -161,7 +154,7 @@ public class ServerView {
                 });
 
                 var info = scanService.queryGameTools(shortId);
-                String longId = String.valueOf(info.getLongServerId());
+                String longId = String.valueOf(info.longServerId());
                 Platform.runLater(() -> {
                     gtSpinner.setVisible(false);
                     gameToolsStatusLabel.setText(bundle.getString("server.result.gametools").replace("{0}", longId));
@@ -171,7 +164,7 @@ public class ServerView {
                 Platform.runLater(() -> {
                     hackersSpinner.setVisible(false);
                     hackersStatusLabel.setText(bundle.getString("server.result.hackers")
-                            .replace("{0}", String.valueOf(combined.getCheaterCount())));
+                            .replace("{0}", String.valueOf(combined.cheaterCount())));
                 });
 
                 Platform.runLater(() -> {
@@ -179,13 +172,11 @@ public class ServerView {
                     flaggedPlayersBox.getChildren().clear();
                 });
 
-                List<InterestingPlayer> flagged = scanService.queryPlayers(shortId, player -> {
-                    Platform.runLater(() -> {
-                        Label label = new Label(player.toString());
-                        label.getStyleClass().add("label");
-                        flaggedPlayersBox.getChildren().add(label);
-                    });
-                });
+                scanService.queryPlayers(shortId, player -> Platform.runLater(() -> {
+                    Label label = new Label(player.toString());
+                    label.getStyleClass().add("label");
+                    flaggedPlayersBox.getChildren().add(label);
+                }));
 
                 Platform.runLater(() -> playerProgressBar.setVisible(false));
 

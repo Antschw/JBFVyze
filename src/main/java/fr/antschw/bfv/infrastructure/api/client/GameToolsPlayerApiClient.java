@@ -1,9 +1,11 @@
 package fr.antschw.bfv.infrastructure.api.client;
 
 import fr.antschw.bfv.common.constants.ApiConstants;
+import fr.antschw.bfv.domain.model.ServerInfo;
 import fr.antschw.bfv.domain.model.ServerPlayer;
 import fr.antschw.bfv.domain.model.ServerPlayers;
 import fr.antschw.bfv.domain.model.UserStats;
+import fr.antschw.bfv.domain.service.ApiClient;
 import fr.antschw.bfv.domain.service.ApiRequestException;
 import fr.antschw.bfv.infrastructure.api.util.ApiUrlBuilder;
 import org.json.JSONArray;
@@ -22,7 +24,7 @@ import java.util.List;
 /**
  * Client for GameTools API to fetch player-related information.
  */
-public class GameToolsPlayerApiClient {
+public class GameToolsPlayerApiClient implements ApiClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GameToolsPlayerApiClient.class);
     private final HttpClient httpClient;
@@ -31,6 +33,11 @@ public class GameToolsPlayerApiClient {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(ApiConstants.HTTP_TIMEOUT_SECONDS))
                 .build();
+    }
+
+    @Override
+    public ServerInfo fetchServerInfo(String serverId) throws ApiRequestException {
+        throw new UnsupportedOperationException("This API client is for player operations only");
     }
 
     /**
@@ -167,16 +174,4 @@ public class GameToolsPlayerApiClient {
         }
     }
 
-    /**
-     * Fetches user statistics based on player ID.
-     *
-     * @param playerId the player's unique ID
-     * @return UserStats object containing the player's stats
-     * @throws ApiRequestException if the API request fails
-     */
-    public UserStats fetchUserStatsById(long playerId) throws ApiRequestException {
-        // For this implementation, we'll convert the ID to a string and use the same method
-        // In a real-world scenario, you might want to use a different endpoint or parameter
-        return fetchUserStats(String.valueOf(playerId));
-    }
 }

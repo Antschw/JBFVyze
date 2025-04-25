@@ -6,11 +6,7 @@ import java.util.List;
 /**
  * Domain model representing all players in a server.
  */
-public class ServerPlayers {
-
-    private final String serverName;
-    private final String serverId;
-    private final List<ServerPlayer> players;
+public record ServerPlayers(String serverName, String serverId, List<ServerPlayer> players) {
 
     /**
      * Constructor.
@@ -19,21 +15,11 @@ public class ServerPlayers {
      * @param serverId   the server ID
      * @param players    list of players in the server
      */
-    public ServerPlayers(String serverName, String serverId, List<ServerPlayer> players) {
-        this.serverName = serverName;
-        this.serverId = serverId;
-        this.players = players;
+    public ServerPlayers {
     }
 
-    public String getServerName() {
-        return serverName;
-    }
-
-    public String getServerId() {
-        return serverId;
-    }
-
-    public List<ServerPlayer> getPlayers() {
+    @Override
+    public List<ServerPlayer> players() {
         return Collections.unmodifiableList(players);
     }
 

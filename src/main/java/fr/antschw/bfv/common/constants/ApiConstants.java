@@ -9,6 +9,11 @@ public final class ApiConstants {
         // Prevent instantiation
     }
 
+    // Api names
+    public static final String GAMETOOLS_NAME = "GameTools";
+    public static final String BFVHACKERS_NAME = "BFVHackers";
+    public static final String GAMETOOLS_PLAYERS_NAME = "GameToolsPlayers";
+
     public static final String GAMETOOLS_API_BASE_URL = "https://api.gametools.network";
     public static final String BFVHACKERS_API_BASE_URL = "https://bfvhackers.com/api/v1/server-hackers";
     public static final int HTTP_TIMEOUT_SECONDS = 10;
