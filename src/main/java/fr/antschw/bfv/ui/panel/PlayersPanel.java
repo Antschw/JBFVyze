@@ -16,8 +16,9 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.beans.value.ObservableValue;
 
 import java.util.Comparator;
@@ -40,10 +41,14 @@ public class PlayersPanel extends VBox {
     // Compteur de joueurs suspects
     private final Label countLabel = new Label("0");
     private final ProgressIndicator countSpinner = new ProgressIndicator();
+    
+    // Label pour le temps (référence externe)
+    private Label timeLabel;
 
     public PlayersPanel() {
-        this.setSpacing(6);
-        this.setPadding(new Insets(10,0,0,0));
+        this.setSpacing(4);  // Reduced spacing
+        this.getStyleClass().add("players-panel");
+        this.setPadding(new Insets(2, 0, 0, 0));  // Reduced padding
 
         // Créer l'en-tête avec le titre et le compteur
         Label headerLabel = new Label(bundle.getString("server.result.players"));
@@ -56,10 +61,17 @@ public class PlayersPanel extends VBox {
 
         // Configuration du compteur
         countLabel.getStyleClass().add("count-label");
+        
+        // Spacer pour pousser le temps à droite
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        // Mise en page horizontale pour l'en-tête
-        HBox header = new HBox(10, headerLabel, countLabel, countSpinner);
+        // Mise en page horizontale pour l'en-tête avec temps à droite
+        HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
+        header.getChildren().addAll(headerLabel, countLabel, countSpinner, spacer);
+        
+        // Le timeLabel sera injecté plus tard via setTimeLabel()
 
         // Table setup
         table.setItems(data);
@@ -166,7 +178,7 @@ public class PlayersPanel extends VBox {
         });
         accCol.setPrefWidth(75);
 
-        table.getColumns().addAll(idCol, rankCol, kdCol, kpmCol, accCol);
+        table.getColumns().addAll(List.of(idCol, rankCol, kdCol, kpmCol, accCol));
 
         // Configure column resizing behavior
         table.widthProperty().addListener((ObservableValue<? extends Number> source, Number oldWidth, Number newWidth) -> {
@@ -211,6 +223,23 @@ public class PlayersPanel extends VBox {
 
         VBox.setVgrow(table, Priority.ALWAYS);
         this.getChildren().addAll(header, table);
+    }
+    
+    /**
+     * Définit le label pour l'affichage du temps et l'ajoute à l'en-tête
+     * 
+     * @param timeLabel le label pour l'affichage du temps
+     */
+    public void setTimeLabel(Label timeLabel) {
+        this.timeLabel = timeLabel;
+        
+        // Récupérer la HBox d'en-tête
+        HBox header = (HBox) getChildren().get(0);
+        
+        // Ajouter le timeLabel à l'en-tête s'il n'y est pas déjà
+        if (!header.getChildren().contains(timeLabel)) {
+            header.getChildren().add(timeLabel);
+        }
     }
 
     /**

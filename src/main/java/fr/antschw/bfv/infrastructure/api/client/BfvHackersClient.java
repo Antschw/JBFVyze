@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Singleton;
 import com.google.inject.Inject;
 import fr.antschw.bfv.application.util.AppConstants;
+import fr.antschw.bfv.domain.model.HackersSummary;
 import fr.antschw.bfv.domain.model.ServerInfo;
 import fr.antschw.bfv.domain.service.ServerInfoService;
 import fr.antschw.bfv.domain.exception.ApiRequestException;
@@ -55,19 +56,53 @@ public class BfvHackersClient implements ServerInfoService {
             }
 
             JsonNode json = mapper.readTree(response.body());
-            int cheaterCount = json.path(AppConstants.JSON_NUM_HACKERS).asInt(0);
+            HackersSummary summary = parseHackersSummary(json);
+            
             long longId = Long.parseLong(serverId);
-
-            return new ServerInfo(
+            ServerInfo info = new ServerInfo(
                     "BFV Server " + serverId,
                     "",
                     longId,
-                    cheaterCount
+                    summary.numHackers()
             );
+            
+            // Stocker le résumé complet dans la variable statique pour accès par ServerView
+            latestSummary = summary;
+            
+            return info;
         } catch (ApiRequestException e) {
             throw e;
         } catch (Exception e) {
             throw new ApiRequestException("Error fetching cheater data", e);
         }
+    }
+    
+    /**
+     * Parse les données JSON en objet HackersSummary.
+     * 
+     * @param json Le nœud JSON contenant la réponse de l'API
+     * @return Un objet HackersSummary
+     */
+    private HackersSummary parseHackersSummary(JsonNode json) {
+        return new HackersSummary(
+                json.path("total_players").asInt(0),
+                json.path("num_legit").asInt(0),
+                json.path("num_sus").asInt(0),
+                json.path("num_v_sus").asInt(0),
+                json.path("num_hackers").asInt(0),
+                json.path("age").asInt(0)
+        );
+    }
+    
+    // Variable statique pour stocker le dernier résumé obtenu
+    private static HackersSummary latestSummary;
+    
+    /**
+     * Permet d'obtenir le dernier résumé des hackers récupéré par l'API.
+     * 
+     * @return Le dernier résumé ou null si aucun appel n'a été effectué
+     */
+    public static HackersSummary getLatestSummary() {
+        return latestSummary;
     }
 }

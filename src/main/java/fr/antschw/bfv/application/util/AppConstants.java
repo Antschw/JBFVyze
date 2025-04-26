@@ -44,12 +44,19 @@ public final class AppConstants {
 
     // BFVHackers Parameters
     public static final String QUERY_PARAM_SERVERID = "server-id";
+    
+    // BFVHackers API Fields
+    public static final String JSON_TOTAL_PLAYERS = "total_players";
+    public static final String JSON_NUM_LEGIT = "num_legit";
+    public static final String JSON_NUM_SUS = "num_sus";
+    public static final String JSON_NUM_V_SUS = "num_v_sus";
+    public static final String JSON_NUM_HACKERS = "num_hackers";
+    public static final String JSON_AGE = "age";
 
     // JSON Fields - Server Response
     public static final String JSON_SERVERS = "servers";
     public static final String JSON_PREFIX = "prefix";
     public static final String JSON_GAMEID = "gameId";
-    public static final String JSON_NUM_HACKERS = "num_hackers";
 
     // JSON Fields - Players Response
     public static final String JSON_TEAMS = "teams";

@@ -1,12 +1,19 @@
-/* style.css */
+/* ===========================================
+   STRUCTURE GÉNÉRALE
+   =========================================== */
 
-/* Arrondissement des coins de la fenêtre principale */
+/* Fenêtre principale */
 .root {
     -fx-background-radius: 10px;
     -fx-border-radius: 10px;
 }
 
-/* Style de la barre de titre */
+/* Conteneur principal */
+.overlay {
+    -fx-background-radius: 0 0 10px 10px;
+}
+
+/* Barre de titre */
 .title-bar {
     -fx-background-color: -color-accent-4;
     -fx-background-radius: 10px 10px 0 0;
@@ -19,7 +26,7 @@
     -fx-font-size: 16px;
 }
 
-/* Boutons de contrôle dans la barre de titre */
+/* Boutons de contrôle de la fenêtre */
 .control-button {
     -fx-background-color: transparent;
     -fx-background-radius: 50%;
@@ -31,7 +38,11 @@
     -fx-background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Style pour les titres de section comme "Joueurs notables" */
+/* ===========================================
+   ÉLÉMENTS D'EN-TÊTE ET COMMUNS
+   =========================================== */
+
+/* Titre de section */
 .header-label {
     -fx-font-weight: bold;
     -fx-font-size: 14px;
@@ -41,12 +52,80 @@
     -fx-border-width: 0 0 1px 0;
 }
 
-/* Style pour le conteneur principal */
-.overlay {
-    -fx-background-radius: 0 0 10px 10px;
+/* Timer */
+.time-display {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-color: -color-accent-subtle;
+    -fx-text-fill: -color-accent-fg;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-color: -color-accent-muted;
+    -fx-border-width: 1px;
+    -fx-padding: 4px 10px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 3, 0, 0, 1);
 }
 
-/* Styles pour les éléments de résultat du scan */
+.time-container {
+    -fx-alignment: center-right;
+}
+
+/* Animation de pulsation */
+@keyframes pulse {
+    0% { -fx-opacity: 1.0; }
+    50% { -fx-opacity: 0.85; }
+    100% { -fx-opacity: 1.0; }
+}
+
+/* ===========================================
+   PANNEAU DE STATUT
+   =========================================== */
+
+/* Amélioration de l'affichage des labels pour un meilleur alignement */
+.status-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+    -fx-alignment: baseline-left;
+    -fx-min-width: 110px;
+}
+
+/* Amélioration de l'affichage des valeurs */
+.status-value {
+    -fx-background-radius: 4px;
+    -fx-background-color: -color-bg-subtle;
+    -fx-padding: 3px 10px;
+    -fx-font-weight: medium;
+    -fx-min-width: 40px;
+    -fx-max-width: 80px;
+    -fx-alignment: baseline-left;
+    -fx-text-alignment: right;
+}
+
+/* Couleurs par catégorie */
+.status-hackers {
+    -fx-text-fill: -color-danger-5;
+}
+
+.status-verysus {
+    -fx-text-fill: -color-warning-6;
+}
+
+.status-sus {
+    -fx-text-fill: -color-warning-4;
+}
+
+.status-legit {
+    -fx-text-fill: -color-success-5;
+}
+
+/* Pulsation pour les valeurs non-nulles */
+.status-hackers:not([text="0"]), 
+.status-verysus:not([text="0"]), 
+.status-sus:not([text="0"]) {
+    -fx-animation: pulse 2s infinite;
+}
+
+/* Styles pour la compatibilité avec l'ancien système */
 .scan-label {
     -fx-font-weight: bold;
 }
@@ -59,28 +138,40 @@
     -fx-text-fill: -color-danger-5;
 }
 
+.scan-warning-light {
+    -fx-text-fill: -color-warning-4;
+}
+
+.scan-warning {
+    -fx-text-fill: -color-warning-6;
+}
+
+.scan-danger, .scan-warning, .scan-warning-light {
+    -fx-animation: pulse 2s infinite;
+}
+
 .time-label {
     -fx-font-weight: bold;
 }
 
-.player-item {
-    -fx-padding: 3px 0;
+/* ===========================================
+   PANNEAU D'HISTORIQUE
+   =========================================== */
+
+/* Version responsive de l'historique */
+.history-panel {
+    -fx-background-color: -color-neutral-subtle;
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+    -fx-border-color: -color-border-subtle;
+    -fx-border-width: 1px;
+    -fx-min-height: 120px;
 }
 
-/* Style pour la liste des joueurs */
-.players-list {
-    -fx-spacing: 4;
-    -fx-padding: 5 0 5 0;
+.history-list .list-cell {
+    -fx-padding: 2px 6px;
 }
 
-/* Suspicious player rows in the TableView */
-.table-row-cell.suspicious-player {
-    -fx-background-color: rgba(231, 76, 60, 0.1);
-    -fx-border-color: rgba(231, 76, 60, 0.3);
-    -fx-border-width: 0 0 1px 0;
-}
-
-/* petits badges pour l’historique */
 .history-badge {
     -fx-background-color: -color-base-3;
     -fx-text-fill: -color-base-9;
@@ -89,52 +180,77 @@
     -fx-font-size: 11px;
 }
 
-/* badge au survol un peu plus clair */
 .history-badge:hover {
     -fx-background-color: -color-base-4;
     -fx-cursor: hand;
 }
 
+/* ===========================================
+   TABLEAU DES JOUEURS
+   =========================================== */
+
+/* Espacement */
+.players-panel {
+    -fx-padding: 4px 0 0 0;
+}
+
+.players-list {
+    -fx-spacing: 4;
+    -fx-padding: 5 0 5 0;
+}
+
+.player-item {
+    -fx-padding: 3px 0;
+}
+
+/* Compteur de joueurs suspects */
 .count-label {
     -fx-font-weight: bold;
     -fx-text-fill: -color-danger-5;
     -fx-padding: 0 0 0 10px;
 }
 
-.history-panel {
-    -fx-background-color: -color-neutral-subtle;
-    -fx-background-radius: 5px;
-    -fx-border-radius: 5px;
-    -fx-border-color: -color-border-subtle;
-    -fx-border-width: 1px;
-}
-
-.history-list .list-cell {
-    -fx-padding: 2px 6px;
-}
-
-/* Styles mis à jour pour les cellules de lien */
+/* Liens cliquables */
 .player-link-cell {
     -fx-cursor: hand;
 }
 
-/* Effet de survol sur les lignes du tableau - plus visible en mode sombre */
+/* Surbrillance et survol */
+.table-row-cell.suspicious-player {
+    -fx-background-color: rgba(231, 76, 60, 0.1);
+    -fx-border-color: rgba(231, 76, 60, 0.3);
+    -fx-border-width: 0 0 1px 0;
+}
+
 .table-row-cell:hover {
-    -fx-background-color: rgba(128, 128, 128, 0.15); /* Gris neutre avec alpha pour fonctionner en clair et sombre */
+    -fx-background-color: rgba(128, 128, 128, 0.15);
 }
 
-/* Effet de survol pour les lignes suspectes (pour ne pas perdre leur style) */
 .table-row-cell.suspicious-player:hover {
-    -fx-background-color: rgba(231, 76, 60, 0.25); /* Rouge plus visible en mode sombre */
+    -fx-background-color: rgba(231, 76, 60, 0.25);
 }
 
-/* Réduire au minimum la barre de défilement */
+/* Grille pour les catégories de joueurs */
+.player-category-grid {
+    -fx-hgap: 10;
+    -fx-vgap: 4;
+}
+
+/* Styles pour le layout responsive */
+.category-grid {
+    -fx-background-color: transparent;
+    -fx-padding: 5px 0;
+}
+
+/* ===========================================
+   BARRE DE DÉFILEMENT
+   =========================================== */
+
 .table-view .scroll-bar:vertical {
     -fx-pref-width: 10;
     -fx-opacity: 0.8;
 }
 
-/* Style de la barre de défilement pour la rendre plus discrète */
 .table-view .scroll-bar:vertical .thumb {
     -fx-background-color: rgba(0, 0, 0, 0.3);
     -fx-background-radius: 5px;
@@ -144,7 +260,6 @@
     -fx-background-color: transparent;
 }
 
-/* Cache les boutons de navigation de la scrollbar */
 .table-view .scroll-bar:vertical .increment-button,
 .table-view .scroll-bar:vertical .decrement-button {
     -fx-opacity: 0;

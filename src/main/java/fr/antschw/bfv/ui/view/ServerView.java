@@ -3,9 +3,12 @@ package fr.antschw.bfv.ui.view;
 import fr.antschw.bfv.application.orchestrator.PlayerStatsFilter;
 import fr.antschw.bfv.application.orchestrator.ServerScanCoordinator;
 import fr.antschw.bfv.application.util.AppConstants;
+import fr.antschw.bfv.application.util.I18nUtils;
 import fr.antschw.bfv.domain.exception.HotkeyListenerException;
+import fr.antschw.bfv.domain.model.HackersSummary;
 import fr.antschw.bfv.domain.service.HotkeyConfigurationService;
 import fr.antschw.bfv.domain.service.HotkeyListenerService;
+import fr.antschw.bfv.infrastructure.api.client.BfvHackersClient;
 import fr.antschw.bfv.ui.panel.PlayersPanel;
 import fr.antschw.bfv.ui.panel.ScanControlPanel;
 import fr.antschw.bfv.ui.panel.StatusPanel;
@@ -20,6 +23,7 @@ import javafx.scene.layout.VBox;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.ResourceBundle;
 
 /**
  * Orchestrates the scan flow by delegating to three panels:
@@ -27,7 +31,8 @@ import java.util.List;
  */
 public class ServerView {
 
-    private final VBox root = new VBox(15);
+    private final ResourceBundle bundle = I18nUtils.getBundle();
+    private final VBox root = new VBox(8); // Espacement réduit entre composants
     private final ServerScanCoordinator scanService;
     private final PlayerStatsFilter playerStatsFilter;
     private final ScanControlPanel controlPane;
@@ -44,13 +49,20 @@ public class ServerView {
 
         controlPane = new ScanControlPanel(hotkeyConfig, this::runScan);
         root.setPadding(new Insets(AppConstants.WINDOW_PADDING));
+        
+        // Connecter le timer du panel de statut au panel des joueurs
+        playersPane.setTimeLabel(statusPane.getTimeLabel());
 
-        // Ajout des composants avec séparateur
-        root.getChildren().addAll(controlPane, statusPane, new Separator(), playersPane);
+        // Ajout des composants avec séparateur plus mince
+        Separator separator = new Separator();
+        separator.setPadding(new Insets(0, 0, 2, 0)); // Réduire l'espace vertical
+        
+        root.getChildren().addAll(controlPane, statusPane, separator, playersPane);
 
         // Le PlayersPanel doit être le seul à s'étendre
         VBox.setVgrow(playersPane, Priority.ALWAYS);
         VBox.setVgrow(statusPane, Priority.NEVER);
+        VBox.setVgrow(controlPane, Priority.NEVER);
 
         try {
             hotkeyListener.startListening(() -> Platform.runLater(this::runScan));
@@ -72,25 +84,41 @@ public class ServerView {
                 String shortId = scanService.extractServerId();
                 Platform.runLater(() -> {
                     statusPane.addToHistory(shortId);
-                    statusPane.setOcrStatus("OCR: #" + shortId, false);
+                    statusPane.setOcrStatus("#" + shortId, false);
                 });
 
 
                 // 2) GameTools
                 var info = scanService.queryGameTools(shortId);
                 Platform.runLater(() ->
-                        statusPane.setGameToolsStatus("GameTools: ID " + info.longServerId(), false)
+                        statusPane.setGameToolsStatus("ID " + info.longServerId(), false)
                 );
 
                 // 3) Hackers
                 var hackInfo = scanService.queryBfvHackers(String.valueOf(info.longServerId()), info);
-                boolean hasCheaters = hackInfo.cheaterCount() > 0;
-                Platform.runLater(() ->
+                
+                // Récupérer le résumé complet des hackers depuis le client
+                HackersSummary summary = BfvHackersClient.getLatestSummary();
+                
+                Platform.runLater(() -> {
+                    if (summary != null) {
+                        // Utiliser la nouvelle méthode avec le résumé complet
+                        statusPane.setHackersStatus(summary, false);
+                    } else {
+                        // Fallback: créer un résumé simplifié
                         statusPane.setHackersStatus(
-                                "BFVHackers: " + hackInfo.cheaterCount() + " cheaters",
-                                false, hasCheaters
-                        )
-                );
+                                new HackersSummary(
+                                    0, // total inconnu
+                                    0, // legit inconnu
+                                    0, // sus inconnu
+                                    0, // very sus inconnu
+                                    hackInfo.cheaterCount(), // nombre de hackers
+                                    0  // âge inconnu
+                                ),
+                                false
+                        );
+                    }
+                });
 
                 // 4) Players async
                 scanService.queryPlayersAsync(
@@ -116,14 +144,17 @@ public class ServerView {
                 );
 
                 Duration d = Duration.between(start, Instant.now());
-                String time = String.format("Time: %dm %ds", d.toMinutes(), d.minusMinutes(d.toMinutes()).getSeconds());
+                String time = String.format("%dm %02ds", d.toMinutes(), d.minusMinutes(d.toMinutes()).getSeconds());
                 Platform.runLater(() -> statusPane.setTime(time));
 
             } catch (Exception ex) {
                 Platform.runLater(() -> {
                     statusPane.setOcrStatus("Error: " + ex.getMessage(), false);
                     statusPane.setGameToolsStatus("", false);
-                    statusPane.setHackersStatus("", false, false);
+                    statusPane.setHackersStatus(
+                            new HackersSummary(0, 0, 0, 0, 0, 0),
+                            false
+                    );
                 });
             } finally {
                 Platform.runLater(() -> {
