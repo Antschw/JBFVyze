@@ -6,7 +6,9 @@ import fr.antschw.bfv.adapters.input.window.ResizeController;
 import fr.antschw.bfv.adapters.input.window.TitleBarController;
 import fr.antschw.bfv.adapters.input.window.WindowManager;
 import fr.antschw.bfv.application.port.UserStatsCachePort;
+import fr.antschw.bfv.application.service.ServerScanService;
 import fr.antschw.bfv.common.constants.UIConstants;
+import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.infrastructure.cache.JsonUserStatsCacheAdapter;
 import fr.antschw.bfv.infrastructure.config.HotkeyModule;
 import fr.antschw.bfv.infrastructure.config.ScanModule;
@@ -68,29 +70,44 @@ public class BFVyzeApplication extends Application {
 
     @Override
     public void stop() throws Exception {
-        super.stop();
+        // 1) Stop hotkey listener
+        try {
+            HotkeyListenerService hotkey = injector.getInstance(HotkeyListenerService.class);
+            hotkey.stopListening();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to stop hotkey listener on shutdown.", e);
+        }
 
-        // Maintenant l'injecteur est accessible ici
+        // 2) Shutdown scan executor
+        try {
+            ServerScanService scanService = injector.getInstance(ServerScanService.class);
+            scanService.shutdown();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to shutdown scan service on shutdown.", e);
+        }
+
+        // 3) Sauvegarde du cache existante
+        super.stop();
         if (injector != null) {
             try {
                 UserStatsCachePort cacheAdapter = injector.getInstance(UserStatsCachePort.class);
-                LOGGER.info("Attempting to save cache to disk...");
-
                 if (cacheAdapter instanceof JsonUserStatsCacheAdapter jsonCache) {
+                    LOGGER.info("Saving cache to disk...");
                     jsonCache.saveToDisk();
-                    LOGGER.info("Cache saved successfully");
-                } else {
-                    LOGGER.warn("Cache adapter is not of expected type: {}",
-                            (cacheAdapter != null ? cacheAdapter.getClass().getName() : "null"));
                 }
             } catch (Exception e) {
                 LOGGER.error("Error saving cache: {}", e.getMessage(), e);
             }
         }
 
+        // 4) Libération des ressources OCR
         BFVOcrFactory.shutdown();
         LOGGER.info("Application stopped, OCR resources released");
+
+        // 5) Forcer la sortie pour terminer tout thread non-daemon (AWT, JNativeHook…)
+        System.exit(0);
     }
+
 
     public static void main(String[] args) {
         launch(args);

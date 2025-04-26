@@ -5,10 +5,6 @@ package fr.antschw.bfv.domain.service;
  */
 public class HotkeyListenerException extends Exception {
 
-    public HotkeyListenerException(String message) {
-        super(message);
-    }
-
     public HotkeyListenerException(String message, Throwable cause) {
         super(message, cause);
     }

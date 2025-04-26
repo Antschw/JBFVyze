@@ -9,7 +9,8 @@ import fr.antschw.bfv.domain.model.ServerInfo;
 import fr.antschw.bfv.domain.model.ServerPlayer;
 import fr.antschw.bfv.domain.model.ServerPlayers;
 import fr.antschw.bfv.domain.model.UserStats;
-import fr.antschw.bfv.domain.service.*;
+import fr.antschw.bfv.domain.service.ScreenshotService;
+import fr.antschw.bfv.domain.service.ServerInfoClient;
 import fr.antschw.bfvocr.api.BFVOcrService;
 import fr.antschw.bfvocr.exceptions.BFVOcrException;
 
@@ -20,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -27,9 +29,14 @@ import static fr.antschw.bfv.common.constants.ApiConstants.BFVHACKERS_NAME;
 import static fr.antschw.bfv.common.constants.ApiConstants.GAMETOOLS_NAME;
 
 /**
- * Provides each stage of the scan pipeline as isolated methods.
+ * Service responsible for performing server scans, including
+ * screenshot capture, OCR extraction, API queries, and asynchronous
+ * retrieval of player statistics.
  */
 public class ServerScanService {
+
+    private static final int DEFAULT_THREAD_COUNT = 5;
+    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ServerScanService.class);
 
     private final ScreenshotService screenshotService;
     private final BFVOcrService ocrService;
@@ -37,10 +44,11 @@ public class ServerScanService {
     private final ServerInfoClient bfvHackersInfoClient;
     private final PlayerStatsUseCase playerStatsUseCase;
     private final PlayerStatsFilter playerStatsFilter;
-    private static final org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(ServerScanService.class);
+    private final ExecutorService executor;
 
     /**
-     * Constructs the server scan service with all required dependencies.
+     * Constructs the server scan service with all required dependencies
+     * and initializes the thread pool.
      */
     @Inject
     public ServerScanService(
@@ -53,17 +61,18 @@ public class ServerScanService {
     ) {
         this.screenshotService = screenshotService;
         this.ocrService = ocrService;
-        this.gameToolsInfoClient   = gameToolsInfoClient;
-        this.bfvHackersInfoClient  = bfvHackersInfoClient;
+        this.gameToolsInfoClient = gameToolsInfoClient;
+        this.bfvHackersInfoClient = bfvHackersInfoClient;
         this.playerStatsUseCase = playerStatsUseCase;
         this.playerStatsFilter = playerStatsFilter;
+        this.executor = Executors.newFixedThreadPool(DEFAULT_THREAD_COUNT);
     }
 
     /**
-     * Performs screenshot + OCR to extract the short server ID.
+     * Performs screenshot capture and OCR to extract the server's short ID.
      *
-     * @return server short ID
-     * @throws Exception if OCR or capture fails
+     * @return the detected server short ID
+     * @throws Exception if capture or OCR fails
      */
     public String extractServerId() throws Exception {
         BufferedImage image = screenshotService.captureScreenshot();
@@ -76,23 +85,25 @@ public class ServerScanService {
     }
 
     /**
-     * Queries GameTools to retrieve server info.
+     * Queries the GameTools API to retrieve full server information using
+     * the OCR-detected short ID.
      *
-     * @param shortId OCR-detected short ID
-     * @return server info with long ID
-     * @throws Exception if query fails
+     * @param shortId the OCR-detected server ID
+     * @return the server info containing full details
+     * @throws Exception if the API request fails
      */
     public ServerInfo queryGameTools(String shortId) throws Exception {
         return gameToolsInfoClient.fetchServerInfo(shortId);
     }
 
     /**
-     * Queries BFVHackers and combines info into a complete ServerInfo object.
+     * Queries the BFVHackers API and merges results with base server info
+     * to include cheater count.
      *
-     * @param longId     long ID from GameTools
-     * @param baseInfo   base server info from GameTools
-     * @return updated ServerInfo with cheater count
-     * @throws Exception if query fails
+     * @param longId   the full server ID from GameTools
+     * @param baseInfo the base server info from GameTools
+     * @return enriched server info including cheater count
+     * @throws Exception if the API request fails
      */
     public ServerInfo queryBfvHackers(String longId, ServerInfo baseInfo) throws Exception {
         ServerInfo hackersInfo = bfvHackersInfoClient.fetchServerInfo(longId);
@@ -105,20 +116,20 @@ public class ServerScanService {
     }
 
     /**
-     * Queries all players from the server and processes their stats asynchronously.
+     * Retrieves all players on the server and processes their statistics asynchronously.
+     * Updates the UI via the provided callbacks on the JavaFX Application thread.
      *
-     * @param shortId OCR-detected short ID
-     * @param playerCallback callback for each player as they’re loaded
-     * @param statsCallback callback for when a player's stats are loaded
+     * @param shortId        the OCR-detected server ID
+     * @param playerCallback callback invoked for each loaded player
+     * @param statsCallback  callback invoked for each player's stats
      */
-    public void queryPlayersAsync(String shortId,
-                                  Consumer<ServerPlayer> playerCallback,
-                                  BiConsumer<ServerPlayer, UserStats> statsCallback) {
-        ExecutorService executor = Executors.newFixedThreadPool(5); // 5 threads pour les requêtes parallèles
-
+    public void queryPlayersAsync(
+            String shortId,
+            Consumer<ServerPlayer> playerCallback,
+            BiConsumer<ServerPlayer, UserStats> statsCallback
+    ) {
         try {
             ServerPlayers players = playerStatsUseCase.getServerPlayers(shortId);
-
             List<CompletableFuture<Void>> futures = new ArrayList<>();
 
             for (ServerPlayer player : players.players()) {
@@ -128,9 +139,7 @@ public class ServerScanService {
                     try {
                         UserStats stats = playerStatsUseCase.getPlayerStats(player.name());
                         playerStatsFilter.getInterestingMetrics(stats);
-
                         Platform.runLater(() -> statsCallback.accept(player, stats));
-
                     } catch (Exception e) {
                         LOGGER.warn("Failed to fetch stats for player {}: {}", player.name(), e.getMessage());
                         Platform.runLater(() -> statsCallback.accept(player, null));
@@ -141,12 +150,26 @@ public class ServerScanService {
             }
 
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
         } catch (Exception e) {
-            LOGGER.error("Error fetching players list: {}", e.getMessage());
-        } finally {
-            executor.shutdown();
+            LOGGER.error("Error fetching players list: {}", e.getMessage(), e);
         }
     }
 
+    /**
+     * Gracefully shuts down the internal thread pool used for player queries.
+     * Ensures any running tasks are terminated.
+     */
+    public void shutdown() {
+        LOGGER.info("Shutting down scan executor...");
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                LOGGER.warn("Executor did not terminate in time, forcing shutdown.");
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            executor.shutdownNow();
+        }
+    }
 }

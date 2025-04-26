@@ -24,8 +24,6 @@ public class StatusPanel extends HBox {
 
     private final ResourceBundle bundle = I18nUtils.getBundle();
 
-    // --- Left status grid (unchanged logic) ---
-    private final GridPane grid = new GridPane();
     private final ProgressIndicator ocrSpinner = new ProgressIndicator();
     private final Label ocrLabel = new Label();
     private final ProgressIndicator gtSpinner = new ProgressIndicator();
@@ -36,8 +34,6 @@ public class StatusPanel extends HBox {
 
     // --- Right history box ---
     private final ObservableList<String> historyData = FXCollections.observableArrayList();
-    private final Label historyTitle = new Label(bundle.getString("server.history.title"));
-    private final ListView<String> historyList = new ListView<>(historyData);
 
     public StatusPanel() {
         // HBox spacing between grid and history box
@@ -46,6 +42,8 @@ public class StatusPanel extends HBox {
         this.setPadding(new Insets(0, 0, 10, 0));
 
         // --- Configure status grid ---
+        // --- Left status grid (unchanged logic) ---
+        GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(6);
 
@@ -71,9 +69,11 @@ public class StatusPanel extends HBox {
         HBox.setHgrow(grid, Priority.ALWAYS);
 
         // --- Configure history box ---
+        Label historyTitle = new Label(bundle.getString("server.history.title"));
         historyTitle.getStyleClass().add("header-label");
 
         // Fixer la taille de la liste d'historique
+        ListView<String> historyList = new ListView<>(historyData);
         historyList.setPrefWidth(120); // Largeur fixe
         historyList.setMaxWidth(120);  // Limite max
         historyList.setPrefHeight(120); // Hauteur fixe
@@ -98,7 +98,7 @@ public class StatusPanel extends HBox {
     public void addToHistory(String shortId) {
         String entry = "#" + shortId;
         if (!historyData.contains(entry)) {
-            historyData.add(0, entry); // insérer en haut
+            historyData.addFirst(entry);
         }
     }
 

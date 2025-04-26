@@ -16,7 +16,7 @@ public class PlayerStatsFilter {
     private static final double ACCURACY_THRESHOLD = 27.0;
 
     /**
-     * Determines if a player's stats are considered "interesting".
+     * Determines if a player's stats are considered “interesting”.
      *
      * @param stats the user stats to evaluate
      * @return list of matched criteria descriptions, empty if none

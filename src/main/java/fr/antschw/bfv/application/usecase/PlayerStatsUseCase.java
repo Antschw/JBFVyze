@@ -30,16 +30,6 @@ public class PlayerStatsUseCase {
     }
 
     /**
-     * Constructor with dependency injection for testing.
-     *
-     * @param playerApiClient custom player API client
-     */
-    public PlayerStatsUseCase(GameToolsPlayerApiClient playerApiClient, UserStatsCachePort cache) {
-        this.playerApiClient = playerApiClient;
-        this.cache = cache;
-    }
-
-    /**
      * Gets the players in a server.
      *
      * @param serverId server ID

@@ -4,7 +4,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Singleton;
 import com.google.inject.name.Names;
 
-import fr.antschw.bfv.application.orchestrator.ScanServerOrchestrator;
 import fr.antschw.bfv.application.port.UserStatsCachePort;
 import fr.antschw.bfv.domain.service.ServerInfoClient;
 import fr.antschw.bfv.domain.service.ServerPlayersClient;
@@ -60,8 +59,5 @@ public class ScanModule extends AbstractModule {
                 .to(JsonUserStatsCacheAdapter.class)
                 .asEagerSingleton();
 
-        // Orchestrator that drives the scan flow
-        bind(ScanServerOrchestrator.class)
-                .in(Singleton.class);
     }
 }

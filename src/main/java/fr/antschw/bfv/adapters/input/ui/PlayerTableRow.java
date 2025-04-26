@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * UI model class for displaying a single player’s stats in a TableView.
+ * UI model class for displaying a single player's stats in a TableView.
  * Holds the name, rank, K/D, KPM, accuracy, and which metrics flagged this player as suspicious.
  */
 public class PlayerTableRow {
@@ -33,9 +33,9 @@ public class PlayerTableRow {
     private List<String> metrics = new ArrayList<>();
 
     /**
-     * Constructs a row with only the player’s name. Stats and metrics will be filled in later.
+     * Constructs a row with only the player's name. Stats and metrics will be filled in later.
      *
-     * @param name the player’s ID or name
+     * @param name the player's ID or name
      */
     public PlayerTableRow(String name) {
         this.name.set(name);

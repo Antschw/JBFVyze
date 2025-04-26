@@ -17,7 +17,6 @@ import java.util.ResourceBundle;
 public class ScanControlPane extends HBox {
 
     private final ResourceBundle bundle = I18nUtils.getBundle();
-    private final Label title;
     private final Button scanButton;
     private String activeHotkey;
 
@@ -26,7 +25,7 @@ public class ScanControlPane extends HBox {
         this.setPadding(new Insets(10, 0, 10, 0));
 
         // 1) Title label, will grow horizontally to push the button right
-        title = new Label(bundle.getString("server.ready"));
+        Label title = new Label(bundle.getString("server.ready"));
         title.getStyleClass().add("header-label");
         title.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(title, Priority.ALWAYS);

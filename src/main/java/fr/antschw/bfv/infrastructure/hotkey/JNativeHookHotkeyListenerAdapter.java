@@ -46,15 +46,22 @@ public class JNativeHookHotkeyListenerAdapter implements HotkeyListenerService, 
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void stopListening() {
         try {
             GlobalScreen.unregisterNativeHook();
+            GlobalScreen.removeNativeKeyListener(this);
             LOGGER.info("Global hotkey listener stopped.");
         } catch (Exception e) {
             LOGGER.warn("Error while stopping hotkey listener.", e);
+        } finally {
+            this.callback = null;
         }
     }
+
 
     @Override
     public void nativeKeyPressed(NativeKeyEvent event) {
