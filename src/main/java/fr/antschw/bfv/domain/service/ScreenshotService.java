@@ -1,5 +1,7 @@
 package fr.antschw.bfv.domain.service;
 
+import fr.antschw.bfv.domain.exception.ScreenshotCaptureException;
+
 import java.awt.image.BufferedImage;
 
 /**

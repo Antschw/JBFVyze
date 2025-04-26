@@ -134,7 +134,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>fr.antschw.bfv.adapters.input.ui.BFVyzeApplication</mainClass>
+                    <mainClass>fr.antschw.bfv.ui.BFVyzeApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

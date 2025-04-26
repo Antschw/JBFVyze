@@ -1,6 +1,6 @@
 package fr.antschw.bfv.infrastructure.api.util;
 
-import fr.antschw.bfv.common.constants.ApiConstants;
+import fr.antschw.bfv.application.util.constants.AppConstants;
 import org.apache.hc.core5.net.URIBuilder;
 
 import java.net.URI;
@@ -23,11 +23,11 @@ public final class ApiUrlBuilder {
      * @throws URISyntaxException if URI is invalid
      */
     public static URI buildGameToolsUri(String shortServerId) throws URISyntaxException {
-        return new URIBuilder(ApiConstants.GAMETOOLS_API_BASE_URL + ApiConstants.GAMETOOLS_SERVER_ENDPOINT)
-                .addParameter(ApiConstants.QUERY_PARAM_NAME, shortServerId)
-                .addParameter(ApiConstants.QUERY_PARAM_REGION, ApiConstants.REGION_ALL)
-                .addParameter(ApiConstants.QUERY_PARAM_PLATFORM, ApiConstants.PLATFORM_PC)
-                .addParameter(ApiConstants.QUERY_PARAM_LIMIT, ApiConstants.LIMIT_VALUE)
+        return new URIBuilder(AppConstants.GAMETOOLS_API_BASE_URL + AppConstants.GAMETOOLS_SERVER_ENDPOINT)
+                .addParameter(AppConstants.QUERY_PARAM_NAME, shortServerId)
+                .addParameter(AppConstants.QUERY_PARAM_REGION, AppConstants.REGION_ALL)
+                .addParameter(AppConstants.QUERY_PARAM_PLATFORM, AppConstants.PLATFORM_PC)
+                .addParameter(AppConstants.QUERY_PARAM_LIMIT, AppConstants.LIMIT_VALUE)
                 .build();
     }
 
@@ -39,8 +39,8 @@ public final class ApiUrlBuilder {
      * @throws URISyntaxException if URI is invalid
      */
     public static URI buildGameToolsPlayersUri(String serverId) throws URISyntaxException {
-        return new URIBuilder(ApiConstants.GAMETOOLS_API_BASE_URL + ApiConstants.GAMETOOLS_PLAYERS_ENDPOINT)
-                .addParameter(ApiConstants.QUERY_PARAM_NAME, serverId)
+        return new URIBuilder(AppConstants.GAMETOOLS_API_BASE_URL + AppConstants.GAMETOOLS_PLAYERS_ENDPOINT)
+                .addParameter(AppConstants.QUERY_PARAM_NAME, serverId)
                 .build();
     }
 
@@ -52,12 +52,12 @@ public final class ApiUrlBuilder {
      * @throws URISyntaxException if URI is invalid
      */
     public static URI buildGameToolsStatsUri(String playerName) throws URISyntaxException {
-        return new URIBuilder(ApiConstants.GAMETOOLS_API_BASE_URL + ApiConstants.GAMETOOLS_STATS_ENDPOINT)
-                .addParameter(ApiConstants.QUERY_PARAM_NAME, playerName)
-                .addParameter(ApiConstants.QUERY_PARAM_PLATFORM, ApiConstants.PLATFORM_PC)
-                .addParameter(ApiConstants.QUERY_PARAM_FORMAT_VALUES, ApiConstants.FORMAT_VALUES_TRUE)
-                .addParameter(ApiConstants.QUERY_PARAM_SKIP_BATTLELOG, ApiConstants.SKIP_BATTLELOG_FALSE)
-                .addParameter(ApiConstants.QUERY_PARAM_LANG, ApiConstants.LANG_EN_US)
+        return new URIBuilder(AppConstants.GAMETOOLS_API_BASE_URL + AppConstants.GAMETOOLS_STATS_ENDPOINT)
+                .addParameter(AppConstants.QUERY_PARAM_NAME, playerName)
+                .addParameter(AppConstants.QUERY_PARAM_PLATFORM, AppConstants.PLATFORM_PC)
+                .addParameter(AppConstants.QUERY_PARAM_FORMAT_VALUES, AppConstants.FORMAT_VALUES_TRUE)
+                .addParameter(AppConstants.QUERY_PARAM_SKIP_BATTLELOG, AppConstants.SKIP_BATTLELOG_FALSE)
+                .addParameter(AppConstants.QUERY_PARAM_LANG, AppConstants.LANG_EN_US)
                 .build();
     }
 
@@ -69,8 +69,8 @@ public final class ApiUrlBuilder {
      * @throws URISyntaxException if URI is invalid
      */
     public static URI buildBfvHackersUri(String serverId) throws URISyntaxException {
-        return new URIBuilder(ApiConstants.BFVHACKERS_API_BASE_URL)
-                .addParameter(ApiConstants.QUERY_PARAM_SERVERID, serverId)
+        return new URIBuilder(AppConstants.BFVHACKERS_API_BASE_URL)
+                .addParameter(AppConstants.QUERY_PARAM_SERVERID, serverId)
                 .build();
     }
 }
