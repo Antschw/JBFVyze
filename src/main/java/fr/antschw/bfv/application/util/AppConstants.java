@@ -1,4 +1,4 @@
-package fr.antschw.bfv.application.util.constants;
+package fr.antschw.bfv.application.util;
 
 /**
  * Contains constant values related to API configuration.

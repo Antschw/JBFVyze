@@ -1,6 +1,6 @@
 package fr.antschw.bfv.infrastructure.api.util;
 
-import fr.antschw.bfv.application.util.constants.AppConstants;
+import fr.antschw.bfv.application.util.AppConstants;
 import org.apache.hc.core5.net.URIBuilder;
 
 import java.net.URI;

@@ -2,7 +2,7 @@ package fr.antschw.bfv.ui.view;
 
 import fr.antschw.bfv.application.orchestrator.PlayerStatsFilter;
 import fr.antschw.bfv.application.orchestrator.ServerScanCoordinator;
-import fr.antschw.bfv.application.util.constants.AppConstants;
+import fr.antschw.bfv.application.util.AppConstants;
 import fr.antschw.bfv.domain.exception.HotkeyListenerException;
 import fr.antschw.bfv.domain.service.HotkeyConfigurationService;
 import fr.antschw.bfv.domain.service.HotkeyListenerService;

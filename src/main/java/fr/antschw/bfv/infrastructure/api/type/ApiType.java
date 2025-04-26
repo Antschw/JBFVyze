@@ -1,8 +1,8 @@
 package fr.antschw.bfv.infrastructure.api.type;
 
-import static fr.antschw.bfv.application.util.constants.AppConstants.BFVHACKERS_NAME;
-import static fr.antschw.bfv.application.util.constants.AppConstants.GAMETOOLS_NAME;
-import static fr.antschw.bfv.application.util.constants.AppConstants.GAMETOOLS_PLAYERS_NAME;
+import static fr.antschw.bfv.application.util.AppConstants.BFVHACKERS_NAME;
+import static fr.antschw.bfv.application.util.AppConstants.GAMETOOLS_NAME;
+import static fr.antschw.bfv.application.util.AppConstants.GAMETOOLS_PLAYERS_NAME;
 
 /**
  * Enumeration for supported API types.

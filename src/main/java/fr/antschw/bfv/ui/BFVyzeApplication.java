@@ -1,7 +1,7 @@
 package fr.antschw.bfv.ui;
 
 import fr.antschw.bfv.application.orchestrator.ServerScanCoordinator;
-import fr.antschw.bfv.application.util.constants.AppConstants;
+import fr.antschw.bfv.application.util.AppConstants;
 import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.domain.service.UserStatsCacheService;
 import fr.antschw.bfv.infrastructure.binding.AppModule;

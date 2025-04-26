@@ -1,39 +1,39 @@
-BFVyze - Real-Time Battlefield V analyzer
+# BFVyze — Real-Time Battlefield V Overlay
 
 ## Project Overview
 
-BFVyze is a Java 21 desktop application that provides a real-time analyzer for Battlefield V. It captures screenshots of the game window, extracts a server ID via OCR, retrieves server and player data from external APIs, and displays live statistics in a JavaFX interface. The codebase follows SOLID principles, employs a Hexagonal Architecture (Ports and Adapters), and supports internationalization (i18n) for English and French.
+BFVyze is a Java 21 desktop application that overlays live Battlefield V server and player statistics on your screen. It captures a screenshot of the game window, extracts a server ID via Tess4J OCR, queries external APIs for server info and player stats, and displays everything in a lightweight JavaFX UI. The codebase follows SOLID principles and a Hexagonal (Ports & Adapters) architecture, with full English/French i18n support.
 
 ---
 
 ## Features
 
 - **Server Tab**
-   - Press the global hotkey (default F12) to capture a screenshot and extract the short server ID via Tess4J OCR.
-   - Retrieve server information from GameTools API (server name, long ID) and BFVHackers API (cheater count).
-   - Display cheater count and list of players with basic stats.
+    - Press a global hotkey (default F12) to grab a screenshot and run OCR.
+    - Fetch server metadata from GameTools and BFVHackers (cheater count, player list).
+    - Display server name, short/long IDs and number of detected cheaters.
 
 - **Stats Tab**
-   - Monitor a specific player's overall and session statistics (K/D ratio, kills per minute, accuracy).
-   - Automatic refresh every 2 minutes to update live stats.
-   - Cache player statistics in memory and persist to JSON on disk (TTL 5 days) to reduce API calls.
+    - Enter a player name in Settings; view overall and session stats (K/D, KPM, accuracy).
+    - Automatic refresh every 2 minutes.
+    - In-memory + disk cache (JSON, TTL 5 days) to minimize API calls.
 
 - **Settings Tab**
-   - Configure monitored player name and global scan hotkey at runtime.
-   - Settings persist between sessions in a user-specific configuration file.
-   - Validation of hotkey input and dynamic update of UI labels.
+    - Configure the monitored player name and the scan hotkey at runtime.
+    - Changes persist across sessions in a user‐home config file.
+    - UI labels update immediately when you change the hotkey.
 
-- **Resource Management and Cleanup**
-   - Graceful shutdown of JNativeHook global key listener and removal of listeners to prevent JVM hang.
-   - Dedicated thread pool for asynchronous player queries with a shutdown hook in the application stop method.
-   - OCR resources terminated via `BFVOcrFactory.shutdown()`.
-   - Application exit forced with `System.exit(0)` to terminate any remaining non-daemon threads.
+- **Resource & Thread Management**
+    - Clean shutdown of the JNativeHook keyboard listener to avoid hanging native threads.
+    - Dedicated thread pool for concurrent player queries, with graceful shutdown on exit.
+    - OCR resources closed via `BFVOcrFactory.shutdown()`, and forced `System.exit(0)` to kill any remaining non-daemon threads.
 
 - **Internationalization (i18n)**
-   - ResourceBundle-based support for English (`messages_en.properties`) and French (`messages_fr.properties`).
+    - English/French support via `ResourceBundle` (`messages_en.properties`, `messages_fr.properties`).
 
-- **Packaging and Build**
-   - Maven build with JavaFX Maven Plugin for development and jpackage for producing a standalone Windows executable.
+- **Build & Packaging**
+    - Maven build using the JavaFX Maven Plugin for development.
+    - `scripts/package-windows.bat` produces a standalone Windows EXE with jpackage.
 
 ---
 
@@ -41,97 +41,162 @@ BFVyze is a Java 21 desktop application that provides a real-time analyzer for B
 
 ```
 fr.antschw.bfv
-├── adapters
-│   ├── input        # JavaFX UI controllers and window components
-│   ├── window       # Title bar, resize controller, scan control pane
-│   └── infrastructure
-│       ├── cache    # JSON cache adapter
-│       ├── hotkey   # JNativeHook listener adapter
-│       └── screenshot # AWT Robot screenshot adapter
 ├── application
-│   ├── service      # Orchestration (ServerScanService, HotkeyListener)
-│   └── usecase      # Business logic (PlayerStatsUseCase)
-├── common
-│   └── constants    # API and UI constants
-├── domain
-│   ├── model        # Data classes (ServerInfo, UserStats, etc.)
-│   └── service      # Service interfaces (OCR, API clients, hotkey)
-├── infrastructure
-│   └── api          # HTTP clients for GameTools and BFVHackers APIs
-├── utils            # I18n utility class
-├── resources
-│   ├── i18n         # Language bundles
-│   └── styles       # CSS stylesheet
-└── scripts          # Packaging scripts (package-windows.bat)
+│   ├── orchestrator        # high-level workflows: OCR → API → UI
+│   │   ├── PlayerStatsCoordinator.java
+│   │   ├── PlayerStatsFilter.java
+│   │   └── ServerScanCoordinator.java
+│   │
+│   └── util                # app-wide helpers & constants
+│       ├── AppConstants.java
+│       └── I18nUtils.java
+│
+├── domain                  # core business interfaces & models
+│   ├── exception           # application-level exceptions
+│   │   ├── ApiRequestException.java
+│   │   ├── HotkeyListenerException.java
+│   │   └── ScreenshotCaptureException.java
+│   │
+│   ├── model               # data classes
+│   │   ├── HotkeyConfiguration.java
+│   │   ├── InterestingPlayer.java
+│   │   ├── ServerInfo.java
+│   │   ├── ServerPlayer.java
+│   │   ├── ServerPlayers.java
+│   │   └── UserStats.java
+│   │
+│   └── service             # domain-level interfaces (ports)
+│       ├── HotkeyConfigurationService.java
+│       ├── HotkeyListenerService.java
+│       ├── ScreenshotService.java
+│       ├── ServerInfoService.java
+│       ├── ServerPlayersService.java
+│       ├── UserStatsCacheService.java
+│       └── UserStatsService.java
+│
+├── infrastructure          # concrete adapters & bindings
+│   ├── api
+│   │   ├── client          # HTTP clients implementing domain services
+│   │   │   ├── BfvHackersClient.java
+│   │   │   ├── GameToolsClient.java
+│   │   │   └── PlayerClient.java
+│   │   ├── type            # enums and API metadata
+│   │   │   └── ApiType.java
+│   │   └── util            # request URI builders
+│   │       └── ApiUriBuilder.java
+│   │
+│   ├── binding             # Guice module binding interfaces to adapters
+│   │   └── AppModule.java
+│   │
+│   ├── cache               # disk-backed stats cache
+│   │   └── UserStatsCacheAdapter.java
+│   │
+│   ├── hotkey              # hotkey configuration & listener adapters
+│   │   ├── HotkeyConfigurationAdapter.java
+│   │   └── HotkeyListenerAdapter.java
+│   │
+│   └── screenshot          # AWT Robot screenshot adapter
+│       └── ScreenshotAdapter.java
+│
+├── ui                      # JavaFX application & views
+│   ├── BFVyzeApplication.java
+│   ├── MainController.java
+│   ├── control             # reusable UI controls
+│   │   ├── table
+│   │   │   └── PlayerTableRow.java
+│   │   ├── ResizeController.java
+│   │   ├── TitleBarController.java
+│   │   └── WindowController.java
+│   │
+│   ├── panel               # composite panels used in views
+│   │   ├── PlayersPanel.java
+│   │   ├── ScanControlPanel.java
+│   │   └── StatusPanel.java
+│   │
+│   └── view                # one class per tab
+│       ├── ServerView.java
+│       ├── SettingsView.java
+│       └── StatsView.java
+│
+├── resources               # non-code assets
+│   ├── i18n                # messages_en.properties, messages_fr.properties
+│   └── styles              # style.css
+│
+└── scripts
+    └── package-windows.bat
 ```
 
 ---
 
-## Setup Instructions
+## Setup & Development
 
-1. **Prerequisites**
-   - Java Development Kit 21 (JDK 21)
-   - JavaFX SDK 21 (modules: javafx.controls, javafx.fxml)
-   - Maven 3.6 or higher
-   - Windows OS (for jpackage) or adjust packaging script for your platform.
+### Prerequisites
 
-2. **Clone and Build**
-   ```bash
-   git clone https://github.com/your-org/bfvyze.git
-   cd bfvyze
-   mvn clean package
-   ```
+- Java 21 SDK
+- JavaFX 21 SDK (`javafx.controls`, `javafx.fxml`)
+- Maven 3.6+
+- Windows 10/11 (for jpackage) or adapt `package-windows.bat` on your OS
 
-3. **Run in Development**
-   ```bash
-   mvn javafx:run
-   ```
-   - If JavaFX modules are not on the module path, add VM options:
-     ```text
-     --module-path /path/to/javafx-sdk-21/lib --add-modules javafx.controls,javafx.fxml
-     ```
+### Build & Run
 
-4. **Package Standalone Executable**
-   ```bash
-   cd src/main/scripts
-   package-windows.bat
-   ```
-   - Result: `bfvyze-setup.exe` in the `target` directory.
+```bash
+git clone https://github.com/your-org/bfvyze.git
+cd bfvyze
+mvn clean package
+mvn javafx:run
+```
 
----
+If JavaFX modules aren’t on the path:
 
-## Settings and Usage
+```text
+--module-path /path/to/javafx-sdk-21/lib --add-modules javafx.controls,javafx.fxml
+```
 
-- **Global Hotkey**: Default F12. Change in Settings tab; the button labels update immediately.
-- **Player Name**: Enter the username in Settings. Statistics in the Stats tab will update for this player.
-- **Cache Location**: `%USERHOME%/.bfvyze/statsCache.json` for player stats.
-- **Log Files**: SLF4J logs to console; configure your own `logback.xml` or similar if needed.
+### Package Standalone Executable
+
+```bash
+cd scripts
+package-windows.bat
+```
+
+Result: a self-contained `bfvyze-setup.exe` in `target/`.
 
 ---
 
-## Completed Milestones (Beyond Initial Scope)
+## Usage
 
-- Implemented JSON-based disk cache with automatic save on shutdown and shutdown hook.
-- Introduced dedicated thread pool for player stats queries and proper shutdown logic.
-- Added forced JVM exit to prevent orphaned AWT or native hook threads.
-- Enhanced Settings tab to persist both player name and hotkey configuration.
-- Auto-refresh of the Stats tab every 2 minutes.
+1. Launch the app.
+2. In **Settings**, enter your player name and (optionally) change the scan hotkey.
+3. Switch to **Server** tab, press the hotkey → server scan runs.
+4. Switch to **Stats** tab to view live stats for your chosen player.
+5. Cache file location:
+   ```
+   %USERPROFILE%\.bfvyze\statsCache.json
+   ```
 
 ---
 
 ## Testing
 
-- **Unit Tests**: Run with Maven:
-  ```bash
-  mvn test
-  ```
-- **Integration Tests**: Add API client mocks to `src/test/java` as needed.
+- **Unit tests**:  `mvn test`
+- **Integration tests**: add API-client mocks under `src/test/java`.
+
+---
+
+## Completed Beyond Initial Scope
+
+- JSON disk cache with shutdown-hook persistence.
+- Dedicated thread-pool in `ServerScanCoordinator` with graceful shutdown.
+- Forced JVM exit to reclaim native resources.
+- Coordinators in `application.orchestrator` encapsulate workflow logic.
+- Full refactoring to consistent package-class naming.
 
 ---
 
 ## Future Work
 
-- Improve error handling and user feedback in the UI.
-- Add screenshot examples and UI mockups to the README.
-- Extend language support beyond English and French.
-- Automate CI/CD pipeline for builds and packaging.
+- Improve in-UI error messages and retry logic.
+- Add screenshots and UI mockups to this README.
+- Extend i18n beyond EN/FR.
+- Automate CI/CD pipeline for build, test and packaging.
+

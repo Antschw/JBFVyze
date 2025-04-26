@@ -1,7 +1,7 @@
 package fr.antschw.bfv.ui;
 
 import fr.antschw.bfv.application.util.I18nUtils;
-import fr.antschw.bfv.application.util.constants.AppConstants;
+import fr.antschw.bfv.application.util.AppConstants;
 import fr.antschw.bfv.ui.view.ServerView;
 import fr.antschw.bfv.ui.view.SettingsView;
 import fr.antschw.bfv.ui.view.StatsView;

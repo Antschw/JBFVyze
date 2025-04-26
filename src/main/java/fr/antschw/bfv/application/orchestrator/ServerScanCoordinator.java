@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import static fr.antschw.bfv.application.util.constants.AppConstants.BFVHACKERS_NAME;
-import static fr.antschw.bfv.application.util.constants.AppConstants.GAMETOOLS_NAME;
+import static fr.antschw.bfv.application.util.AppConstants.BFVHACKERS_NAME;
+import static fr.antschw.bfv.application.util.AppConstants.GAMETOOLS_NAME;
 
 /**
  * Service responsible for performing server scans, including

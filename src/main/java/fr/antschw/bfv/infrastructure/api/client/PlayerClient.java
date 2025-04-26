@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Singleton;
 import com.google.inject.Inject;
-import fr.antschw.bfv.application.util.constants.AppConstants;
+import fr.antschw.bfv.application.util.AppConstants;
 import fr.antschw.bfv.domain.model.ServerPlayers;
 import fr.antschw.bfv.domain.model.ServerPlayer;
 import fr.antschw.bfv.domain.model.UserStats;

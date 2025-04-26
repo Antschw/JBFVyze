@@ -10,7 +10,7 @@ import fr.antschw.bfv.domain.exception.ApiRequestException;
 import fr.antschw.bfv.domain.service.ServerPlayersService;
 import fr.antschw.bfv.infrastructure.api.client.PlayerClient;
 
-import static fr.antschw.bfv.application.util.constants.AppConstants.GAMETOOLS_PLAYERS_NAME;
+import static fr.antschw.bfv.application.util.AppConstants.GAMETOOLS_PLAYERS_NAME;
 
 /**
  * Use case for player statistics operations.
