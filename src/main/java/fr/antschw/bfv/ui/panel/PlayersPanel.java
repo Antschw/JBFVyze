@@ -1,5 +1,6 @@
 package fr.antschw.bfv.ui.panel;
 
+import fr.antschw.bfv.ui.control.table.PlayerNameLinkCell;
 import fr.antschw.bfv.ui.control.table.PlayerTableRow;
 import fr.antschw.bfv.application.util.I18nUtils;
 import javafx.collections.FXCollections;
@@ -17,6 +18,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
+import javafx.beans.value.ObservableValue;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -61,13 +63,15 @@ public class PlayersPanel extends VBox {
 
         // Table setup
         table.setItems(data);
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        table.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
 
         table.setPlaceholder(new Label(bundle.getString("server.players.empty")));
 
-        // --- ID column (simple) ---
+        // --- ID column (clickable link) ---
         TableColumn<PlayerTableRow,String> idCol = new TableColumn<>(bundle.getString("server.column.id"));
         idCol.setCellValueFactory(new PropertyValueFactory<>("name"));
+        idCol.setCellFactory(col -> new PlayerNameLinkCell());
+        idCol.setPrefWidth(200);  // Initial preferred width for ID column
 
         // --- Rank column with bold if rank triggered ---
         TableColumn<PlayerTableRow,Number> rankCol = new TableColumn<>(bundle.getString("server.column.rank"));
@@ -91,6 +95,7 @@ public class PlayersPanel extends VBox {
                 }
             }
         });
+        rankCol.setPrefWidth(75);
 
         // --- K/D column with bold on K/D suspicious ---
         TableColumn<PlayerTableRow,Number> kdCol = new TableColumn<>(bundle.getString("server.column.kd"));
@@ -113,6 +118,7 @@ public class PlayersPanel extends VBox {
                 }
             }
         });
+        kdCol.setPrefWidth(75);
 
         // --- KPM column with bold on KPM suspicious ---
         TableColumn<PlayerTableRow,Number> kpmCol = new TableColumn<>(bundle.getString("server.column.kpm"));
@@ -135,6 +141,7 @@ public class PlayersPanel extends VBox {
                 }
             }
         });
+        kpmCol.setPrefWidth(75);
 
         // --- Accuracy column with bold on Accuracy suspicious ---
         TableColumn<PlayerTableRow,String> accCol = new TableColumn<>(bundle.getString("server.column.accuracy"));
@@ -157,8 +164,38 @@ public class PlayersPanel extends VBox {
                 }
             }
         });
+        accCol.setPrefWidth(75);
 
         table.getColumns().addAll(idCol, rankCol, kdCol, kpmCol, accCol);
+
+        // Configure column resizing behavior
+        table.widthProperty().addListener((ObservableValue<? extends Number> source, Number oldWidth, Number newWidth) -> {
+            // Calculer l'espace disponible après avoir attribué à idCol ce dont elle a besoin
+            double remainingSpace = newWidth.doubleValue() - idCol.getWidth() - 20; // 20px pour le scrollbar
+            
+            // Diviser l'espace restant équitablement entre les autres colonnes
+            int remainingColumns = table.getColumns().size() - 1; // sans la colonne ID
+            if (remainingColumns > 0 && remainingSpace > 0) {
+                double columnWidth = remainingSpace / remainingColumns;
+                
+                rankCol.setPrefWidth(columnWidth);
+                kdCol.setPrefWidth(columnWidth);
+                kpmCol.setPrefWidth(columnWidth);
+                accCol.setPrefWidth(columnWidth);
+            }
+        });
+
+        // Ajuster la colonne ID en fonction du contenu le plus long
+        idCol.widthProperty().addListener((obs, oldWidth, newWidth) -> {
+            // Cette logique sera déclenchée à chaque changement de taille de la colonne
+            // Vérifier si la colonne a besoin d'être élargie pour afficher tout le contenu
+            if (data.size() > 0) {
+                double requiredWidth = calculateRequiredIdWidth();
+                if (requiredWidth > newWidth.doubleValue()) {
+                    idCol.setPrefWidth(requiredWidth);
+                }
+            }
+        });
 
         // Highlight entire row for any suspicious
         table.setRowFactory(tv -> new TableRow<>() {
@@ -174,6 +211,52 @@ public class PlayersPanel extends VBox {
 
         VBox.setVgrow(table, Priority.ALWAYS);
         this.getChildren().addAll(header, table);
+    }
+
+    /**
+     * Calcule la largeur requise pour la colonne ID basée sur le contenu le plus long.
+     * 
+     * @return la largeur recommandée en pixels
+     */
+    private double calculateRequiredIdWidth() {
+        double maxWidth = 150; // Largeur minimale
+        
+        // Utilise une heuristique simple: 9 pixels par caractère + marge de 20px
+        for (PlayerTableRow row : data) {
+            String name = row.getName();
+            if (name != null) {
+                double requiredWidth = name.length() * 9 + 20;
+                maxWidth = Math.max(maxWidth, requiredWidth);
+            }
+        }
+        
+        // Limiter à une taille maximale raisonnable
+        return Math.min(maxWidth, 300);
+    }
+
+    /**
+     * Appliquer les dimensions optimales aux colonnes
+     */
+    public void optimizeColumnWidths() {
+        if (data.isEmpty()) return;
+        
+        // Pour la colonne ID
+        double idWidth = calculateRequiredIdWidth();
+        TableColumn<PlayerTableRow, ?> idColumn = table.getColumns().get(0);
+        idColumn.setPrefWidth(idWidth);
+        
+        // Déclencher un recalcul des autres colonnes
+        double width = table.getWidth();
+        double remainingSpace = width - idWidth - 20; // 20px pour le scrollbar
+        int remainingColumns = table.getColumns().size() - 1;
+        
+        if (remainingColumns > 0 && remainingSpace > 0) {
+            double columnWidth = remainingSpace / remainingColumns;
+            
+            for (int i = 1; i < table.getColumns().size(); i++) {
+                table.getColumns().get(i).setPrefWidth(columnWidth);
+            }
+        }
     }
 
     /**
@@ -198,6 +281,18 @@ public class PlayersPanel extends VBox {
      */
     public void addPlayer(String name) {
         PlayerTableRow row = new PlayerTableRow(name);
+        data.add(row);
+        rowMap.put(name, row);
+    }
+
+    /**
+     * Add a player row with ID as soon as discovered.
+     *
+     * @param name the player's name
+     * @param playerId the player's unique ID
+     */
+    public void addPlayer(String name, long playerId) {
+        PlayerTableRow row = new PlayerTableRow(name, playerId);
         data.add(row);
         rowMap.put(name, row);
     }
@@ -237,11 +332,30 @@ public class PlayersPanel extends VBox {
                 .count();
 
         countLabel.setText(String.valueOf(suspiciousCount));
+        
+        // Optimiser les largeurs des colonnes quand tous les joueurs sont chargés
+        optimizeColumnWidths();
+    }
+
+    /**
+     * Update a player's ID after the initial row creation.
+     *
+     * @param name the player's name (key)
+     * @param playerId the player's unique ID
+     */
+    public void updatePlayerId(String name, long playerId) {
+        PlayerTableRow row = rowMap.get(name);
+        if (row != null) {
+            row.setPlayerId(playerId);
+        }
     }
 
     /** Called when all fetching is done. */
     public void finishLoading() {
         table.setPlaceholder(new Label(bundle.getString("server.players.empty")));
         countSpinner.setVisible(false);
+        
+        // Optimiser les colonnes après le chargement complet
+        optimizeColumnWidths();
     }
 }

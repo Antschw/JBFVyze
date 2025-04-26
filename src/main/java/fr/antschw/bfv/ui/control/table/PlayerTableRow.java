@@ -3,9 +3,11 @@ package fr.antschw.bfv.ui.control.table;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.LongProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
@@ -19,6 +21,7 @@ import java.util.List;
 public class PlayerTableRow {
 
     private final StringProperty name = new SimpleStringProperty();
+    private final LongProperty playerId = new SimpleLongProperty(0);
     private final IntegerProperty rank = new SimpleIntegerProperty(0);
     private final DoubleProperty kd = new SimpleDoubleProperty(0.0);
     private final DoubleProperty kpm = new SimpleDoubleProperty(0.0);
@@ -41,12 +44,34 @@ public class PlayerTableRow {
         this.name.set(name);
     }
 
+    /**
+     * Constructs a row with the player's name and ID.
+     *
+     * @param name the player's display name
+     * @param playerId the player's unique ID
+     */
+    public PlayerTableRow(String name, long playerId) {
+        this.name.set(name);
+        this.playerId.set(playerId);
+    }
+
     // --- name ---
     public String getName() {
         return name.get();
     }
     public StringProperty nameProperty() {
         return name;
+    }
+
+    // --- playerId ---
+    public long getPlayerId() {
+        return playerId.get();
+    }
+    public void setPlayerId(long playerId) {
+        this.playerId.set(playerId);
+    }
+    public LongProperty playerIdProperty() {
+        return playerId;
     }
 
     // --- rank ---

@@ -95,7 +95,9 @@ public class ServerView {
                 // 4) Players async
                 scanService.queryPlayersAsync(
                         shortId,
-                        player -> Platform.runLater(() -> playersPane.addPlayer(player.name())),
+                        player -> Platform.runLater(() -> 
+                            playersPane.addPlayer(player.name(), player.playerId())
+                        ),
                         (player, stats) -> Platform.runLater(() -> {
                             // Get the list of metrics that flagged this player
                             List<String> metrics = stats != null

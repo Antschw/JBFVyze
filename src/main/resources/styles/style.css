@@ -112,3 +112,41 @@
 .history-list .list-cell {
     -fx-padding: 2px 6px;
 }
+
+/* Styles mis à jour pour les cellules de lien */
+.player-link-cell {
+    -fx-cursor: hand;
+}
+
+/* Effet de survol sur les lignes du tableau - plus visible en mode sombre */
+.table-row-cell:hover {
+    -fx-background-color: rgba(128, 128, 128, 0.15); /* Gris neutre avec alpha pour fonctionner en clair et sombre */
+}
+
+/* Effet de survol pour les lignes suspectes (pour ne pas perdre leur style) */
+.table-row-cell.suspicious-player:hover {
+    -fx-background-color: rgba(231, 76, 60, 0.25); /* Rouge plus visible en mode sombre */
+}
+
+/* Réduire au minimum la barre de défilement */
+.table-view .scroll-bar:vertical {
+    -fx-pref-width: 10;
+    -fx-opacity: 0.8;
+}
+
+/* Style de la barre de défilement pour la rendre plus discrète */
+.table-view .scroll-bar:vertical .thumb {
+    -fx-background-color: rgba(0, 0, 0, 0.3);
+    -fx-background-radius: 5px;
+}
+
+.table-view .scroll-bar:vertical .track {
+    -fx-background-color: transparent;
+}
+
+/* Cache les boutons de navigation de la scrollbar */
+.table-view .scroll-bar:vertical .increment-button,
+.table-view .scroll-bar:vertical .decrement-button {
+    -fx-opacity: 0;
+    -fx-pref-height: 0;
+}
