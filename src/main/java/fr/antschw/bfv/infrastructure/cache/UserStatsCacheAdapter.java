@@ -11,7 +11,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Inject;
 import jakarta.inject.Singleton;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -21,13 +20,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.slf4j.LoggerFactory.getLogger;
+
 /**
  * JSON + in-memory cache adapter.
  */
 @Singleton
 public class UserStatsCacheAdapter implements UserStatsCacheService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserStatsCacheAdapter.class);
+    private static final Logger LOGGER = getLogger(UserStatsCacheAdapter.class);
     private static final Duration TTL = Duration.ofDays(5);
     private static final Path CACHE_FILE = Path.of(System.getProperty("user.home"), ".bfvyze", "statsCache.json");
 

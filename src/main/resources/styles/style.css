@@ -89,6 +89,13 @@
     -fx-min-width: 110px;
 }
 
+/* Version compacte pour layout horizontal */
+.stats-label-compact {
+    -fx-font-weight: bold;
+    -fx-text-fill: -color-fg-default;
+    -fx-min-width: 80px;
+}
+
 /* Amélioration de l'affichage des valeurs */
 .status-value {
     -fx-background-radius: 4px;
@@ -99,6 +106,26 @@
     -fx-max-width: 80px;
     -fx-alignment: baseline-left;
     -fx-text-alignment: right;
+}
+
+/* Version pour stats */
+.stats-value {
+    -fx-padding: 2px 5px;
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 3px;
+    -fx-font-weight: medium;
+    -fx-min-width: 60px;
+}
+
+/* Style pour les box de stats */
+.stat-box {
+    -fx-background-color: transparent;
+    -fx-background-radius: 5px;
+    -fx-border-color: -color-border-subtle;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-padding: 3px 8px;
+    -fx-spacing: 5;
 }
 
 /* Couleurs par catégorie */
@@ -119,8 +146,8 @@
 }
 
 /* Pulsation pour les valeurs non-nulles */
-.status-hackers:not([text="0"]), 
-.status-verysus:not([text="0"]), 
+.status-hackers:not([text="0"]),
+.status-verysus:not([text="0"]),
 .status-sus:not([text="0"]) {
     -fx-animation: pulse 2s infinite;
 }
@@ -264,4 +291,202 @@
 .table-view .scroll-bar:vertical .decrement-button {
     -fx-opacity: 0;
     -fx-pref-height: 0;
+}
+
+/* ===========================================
+   PANNEAU DE STATISTIQUES (STATS VIEW)
+   =========================================== */
+
+/* Labels et valeurs dans les grilles de stats */
+.stats-label {
+    -fx-font-weight: bold;
+    -fx-min-width: 120px;
+    -fx-alignment: baseline-left;
+}
+
+/* Séparateurs pour les différentes sections */
+.stats-view .separator {
+    -fx-padding: 5px 0;
+}
+
+/* Messages de statut */
+.status-text {
+    -fx-padding: 5px 0;
+    -fx-font-size: 12px;
+}
+
+.error-text {
+    -fx-text-fill: -color-danger-5;
+}
+
+.success-text {
+    -fx-text-fill: -color-success-5;
+}
+
+/* Panneau des paramètres de stats */
+.stats-settings-panel {
+    -fx-background-color: -color-neutral-subtle;
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+    -fx-border-color: -color-border-subtle;
+    -fx-border-width: 1px;
+}
+
+/* Panneau d'informations générales */
+.stats-general-panel {
+    -fx-padding: 10px;
+}
+
+/* Panneau de graphique */
+.stats-chart-panel {
+    -fx-padding: 10px;
+    -fx-min-height: 300px;
+}
+
+/* Légendes du graphique */
+.kd-legend {
+    -fx-fill: -color-success-5;
+    -fx-stroke: -color-success-6;
+    -fx-stroke-width: 1px;
+}
+
+.kpm-legend {
+    -fx-fill: -color-accent-5;
+    -fx-stroke: -color-accent-6;
+    -fx-stroke-width: 1px;
+}
+
+.hs-legend {
+    -fx-fill: -color-warning-5;
+    -fx-stroke: -color-warning-6;
+    -fx-stroke-width: 1px;
+}
+
+/* Séries de données dans le graphique */
+.kd-series {
+    -fx-stroke: -color-success-5;
+    -fx-stroke-width: 2px;
+}
+
+.kpm-series {
+    -fx-stroke: -color-accent-5;
+    -fx-stroke-width: 2px;
+}
+
+.hs-series {
+    -fx-stroke: -color-warning-5;
+    -fx-stroke-width: 2px;
+}
+
+/* Indicateurs de tendance */
+.trend-up {
+    -fx-fill: -color-success-5;
+}
+
+.trend-down {
+    -fx-fill: -color-danger-5;
+}
+
+.trend-stable {
+    -fx-fill: -color-warning-5;
+}
+
+/* Point de données dans le graphique */
+.chart-symbol {
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+
+.default-color0.chart-symbol {
+    -fx-background-color: -color-success-5, white;
+}
+
+.default-color1.chart-symbol {
+    -fx-background-color: -color-accent-5, white;
+}
+
+.default-color2.chart-symbol {
+    -fx-background-color: -color-warning-5, white;
+}
+
+/* Zone du graphique */
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+/* Grille du graphique */
+.chart-vertical-grid-lines {
+    -fx-stroke: -color-border-muted;
+    -fx-stroke-dash-array: 2 2;
+}
+
+.chart-horizontal-grid-lines {
+    -fx-stroke: -color-border-muted;
+    -fx-stroke-dash-array: 2 2;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.toggle-switch .toggle-button {
+    -fx-background-color: -color-border-subtle;
+    -fx-background-radius: 10px;
+    -fx-border-color: -color-border-default;
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+    -fx-min-width: 40px;
+    -fx-min-height: 20px;
+}
+
+.toggle-switch .toggle-button:selected {
+    -fx-background-color: -color-accent-5;
+}
+
+.toggle-switch .toggle-button .thumb {
+    -fx-background-color: white;
+    -fx-background-radius: 50%;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 5, 0, 0, 0);
+}
+
+/* Style pour transformer une checkbox en toggle switch */
+.switch-checkbox .box {
+    -fx-background-color: #CCCCCC;
+    -fx-background-radius: 10px;
+    -fx-min-width: 40px;
+    -fx-min-height: 20px;
+    -fx-padding: 0;
+    -fx-border-width: 0;
+}
+
+.switch-checkbox:selected .box {
+    -fx-background-color: -color-accent-5;
+}
+
+.switch-checkbox .box .mark {
+    -fx-background-color: white;
+    -fx-background-insets: 0;
+    -fx-background-radius: 10px;
+    -fx-min-width: 16px;
+    -fx-min-height: 16px;
+    -fx-pref-width: 16px;
+    -fx-pref-height: 16px;
+    -fx-shape: "M 100, 100 m -75, 0 a 75,75 0 1,0 150,0 a 75,75 0 1,0 -150,0";
+    -fx-translate-x: -8;
+}
+
+.switch-checkbox:selected .box .mark {
+    -fx-translate-x: 8;
+}
+
+/* Transition animation pour le déplacement du mark */
+.switch-checkbox .box .mark {
+    -fx-translate-x: -8;
+    -fx-transition: translate-x 0.2s ease-in-out;
+}
+
+.switch-checkbox:selected .box .mark {
+    -fx-translate-x: 8;
 }
