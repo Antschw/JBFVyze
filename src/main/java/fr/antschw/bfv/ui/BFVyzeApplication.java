@@ -6,18 +6,15 @@ import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.domain.service.UserStatsCacheService;
 import fr.antschw.bfv.infrastructure.binding.AppModule;
 import fr.antschw.bfv.infrastructure.cache.UserStatsCacheAdapter;
-import fr.antschw.bfv.ui.control.ResizeController;
-import fr.antschw.bfv.ui.control.TitleBarController;
-import fr.antschw.bfv.ui.control.WindowController;
+import fr.antschw.bfv.ui.control.ThemeController;
 import fr.antschw.bfvocr.api.BFVOcrFactory;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +26,6 @@ import java.util.Objects;
 public class BFVyzeApplication extends Application {
 
     private final static Logger LOGGER = LoggerFactory.getLogger(BFVyzeApplication.class.getName());
-
     private Injector injector;
 
     @Override
@@ -39,28 +35,34 @@ public class BFVyzeApplication extends Application {
                 new AppModule()
         );
 
+        // Appliquer le thème
         Application.setUserAgentStylesheet(new atlantafx.base.theme.PrimerLight().getUserAgentStylesheet());
+
+        // Initialiser le contrôleur de thème
+        ThemeController.initialize();
+
+        // Initialiser le contrôleur principal
         MainController mainController = injector.getInstance(MainController.class);
 
-        BorderPane root = new BorderPane();
+        // Configurer la scène
+        Scene scene = new Scene(mainController.getRoot(), AppConstants.WINDOW_WIDTH, AppConstants.WINDOW_HEIGHT);
 
-        TitleBarController titleBarController = new TitleBarController();
-        root.setTop(titleBarController.createTitleBar(primaryStage));
-        root.setCenter(mainController.getRoot());
-
-        ResizeController resizeController = new ResizeController();
-        resizeController.makeResizable(primaryStage, root);
-
-        Scene scene = new Scene(root, AppConstants.WINDOW_WIDTH, AppConstants.WINDOW_HEIGHT);
-
-        if (getClass().getResource("/styles/style.css") == null) {
-            LOGGER.warn("Warning: CSS stylesheet not found!");
+        // Charger les feuilles de style
+        try {
+            if (getClass().getResource("/styles/style.css") != null) {
+                scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles/style.css")).toExternalForm());
+            } else {
+                LOGGER.warn("Warning: Main stylesheet not found!");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to load stylesheets", e);
         }
-        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles/style.css")).toExternalForm());
-        scene.setFill(Color.TRANSPARENT);
 
-        new WindowController().configureStage(primaryStage);
-
+        // Configuration finale de la fenêtre
+        primaryStage.setTitle("BFVyze");
+        primaryStage.initStyle(StageStyle.DECORATED);
+        primaryStage.setMinWidth(500);
+        primaryStage.setMinHeight(400);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -104,7 +106,6 @@ public class BFVyzeApplication extends Application {
         // 5) Forcer la sortie pour terminer tout thread non-daemon (AWT, JNativeHook…)
         System.exit(0);
     }
-
 
     public static void main(String[] args) {
         launch(args);

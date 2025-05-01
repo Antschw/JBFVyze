@@ -6,6 +6,7 @@ import fr.antschw.bfv.domain.exception.ApiRequestException;
 import fr.antschw.bfv.domain.model.SessionStats;
 import fr.antschw.bfv.domain.model.UserStats;
 import fr.antschw.bfv.domain.service.PlayerMonitoringService;
+import fr.antschw.bfv.domain.service.SettingsService;
 import fr.antschw.bfv.domain.service.UserStatsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,13 +25,16 @@ import static fr.antschw.bfv.application.util.AppConstants.GAMETOOLS_PLAYERS_NAM
 
 /**
  * Implementation of a PlayerMonitoringService that fetches player stats at regular intervals.
+ * Modifié pour utiliser un intervalle fixe de 2 minutes et sauvegarder les settings.
  */
 public class PlayerMonitoringAdapter implements PlayerMonitoringService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PlayerMonitoringAdapter.class);
-    private static final int UPDATE_INTERVAL_MINUTES = 5; // Modifié à 5 minutes
+    private static final int UPDATE_INTERVAL_MINUTES = 2; // Modifié à 2 minutes
 
     private final UserStatsService userStatsService;
+    private final SettingsService settingsService;
+
     // On n'initialise pas le scheduler ici pour éviter les problèmes de démarrage
     private ScheduledExecutorService scheduler;
 
@@ -43,8 +47,16 @@ public class PlayerMonitoringAdapter implements PlayerMonitoringService {
     private long lastSecondsPlayed = -1;
 
     @Inject
-    public PlayerMonitoringAdapter(@Named(GAMETOOLS_PLAYERS_NAME) UserStatsService userStatsService) {
+    public PlayerMonitoringAdapter(
+            @Named(GAMETOOLS_PLAYERS_NAME) UserStatsService userStatsService,
+            SettingsService settingsService) {
         this.userStatsService = userStatsService;
+        this.settingsService = settingsService;
+
+        // Initialiser avec les valeurs sauvegardées
+        this.playerIdentifier = settingsService.getPlayerName();
+        this.isPlayerId = settingsService.isUsePlayerId();
+
         LOGGER.info("PlayerMonitoringAdapter initialized with {} minute interval", UPDATE_INTERVAL_MINUTES);
     }
 
@@ -70,7 +82,7 @@ public class PlayerMonitoringAdapter implements PlayerMonitoringService {
         // Fetch stats immediately
         fetchPlayerStats();
 
-        // Schedule regular updates
+        // Schedule regular updates exactly every 2 minutes
         scheduler.scheduleAtFixedRate(
                 this::fetchPlayerStats,
                 UPDATE_INTERVAL_MINUTES,
@@ -117,6 +129,9 @@ public class PlayerMonitoringAdapter implements PlayerMonitoringService {
 
     /**
      * Fetches the latest stats for the monitored player.
+     * Maintenant, un nouvel échantillon est systématiquement ajouté
+     * toutes les 2 minutes, qu'il y ait ou non un changement dans
+     * les statistiques de jeu.
      */
     private void fetchPlayerStats() {
         if (playerIdentifier == null || playerIdentifier.isBlank()) {
@@ -130,37 +145,33 @@ public class PlayerMonitoringAdapter implements PlayerMonitoringService {
             // This would need to be adapted to handle player IDs
             // For now, we use player name only
             UserStats stats = userStatsService.fetchUserStats(playerIdentifier);
+            currentStats = stats;
 
-            // Only update if stats have changed (seconds played increased)
-            if (lastSecondsPlayed == -1 || stats.secondsPlayed() > lastSecondsPlayed) {
-                lastSecondsPlayed = stats.secondsPlayed();
-                currentStats = stats;
+            // Create a session snapshot with current timestamp
+            // Cela garantit un échantillon toutes les 2 minutes exactement
+            SessionStats snapshot = new SessionStats(
+                    stats.username(),
+                    Instant.now(),
+                    stats.kills(),
+                    stats.deaths(),
+                    stats.killDeath(),
+                    stats.killsPerMinute(),
+                    stats.accuracy(),
+                    stats.headshots(),
+                    stats.secondsPlayed()
+            );
 
-                // Create a session snapshot
-                SessionStats snapshot = new SessionStats(
-                        stats.username(),
-                        Instant.now(),
-                        stats.kills(),
-                        stats.deaths(),
-                        stats.killDeath(),
-                        stats.killsPerMinute(),
-                        stats.accuracy(),
-                        stats.headshots(),
-                        stats.secondsPlayed()
-                );
+            // Toujours ajouter le nouvel échantillon
+            sessionHistory.add(snapshot);
+            lastSecondsPlayed = stats.secondsPlayed();
 
-                sessionHistory.add(snapshot);
-
-                // Notify listeners
-                if (onStatsUpdated != null) {
-                    onStatsUpdated.accept(stats);
-                }
-
-                LOGGER.info("Updated stats for {}: K/D={}, KPM={}, Time={}",
-                        stats.username(), stats.killDeath(), stats.killsPerMinute(), stats.timePlayed());
-            } else {
-                LOGGER.debug("No change in playtime for {}, stats not updated", stats.username());
+            // Notify listeners
+            if (onStatsUpdated != null) {
+                onStatsUpdated.accept(stats);
             }
+
+            LOGGER.info("Updated stats for {}: kills={}, deaths={}, Time={}",
+                    stats.username(), stats.kills(), stats.deaths(), stats.secondsPlayed());
 
         } catch (ApiRequestException e) {
             LOGGER.error("Failed to fetch stats for {}: {}", playerIdentifier, e.getMessage());

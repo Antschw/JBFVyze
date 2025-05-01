@@ -17,6 +17,7 @@ import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
@@ -26,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * View responsible for displaying player statistics and session monitoring.
  * Settings for player monitoring are now in SettingsView.
+ * Amélioré avec mise à jour automatique toutes les 2 minutes.
  */
 public class StatsView {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatsView.class);
@@ -38,13 +40,14 @@ public class StatsView {
     private final PlayerChartPanel chartPanel;
     private final SessionSummaryPanel summaryPanel;
 
-    // Lazy initialization du scheduler avec un intervalle plus long
+    // Intervalle de mise à jour fixe de 2 minutes
+    private static final int FETCH_INTERVAL_MINUTES = 2;
+
+    // Utilisation d'un scheduler unique pour toutes les mises à jour
     private ScheduledExecutorService uiUpdater;
-    private static final int UI_UPDATE_INTERVAL_SECONDS = 60; // 60s pour l'UI
 
     // Pour suivre si les stats ont changé
     private UserStats lastDisplayedStats = null;
-    private boolean dataUpdated = false;
 
     /**
      * Constructs the StatsView.
@@ -103,6 +106,10 @@ public class StatsView {
      * Returns the root node for this view.
      */
     public VBox getView() {
+        // Si un joueur est suivi, mais que la vue n'est pas à jour, forcer la mise à jour
+        if (monitoringCoordinator.getCurrentStats() != null && lastDisplayedStats == null) {
+            refreshView();
+        }
         return root;
     }
 
@@ -124,6 +131,7 @@ public class StatsView {
 
     /**
      * Starts the UI update scheduler.
+     * Maintenant configuré pour rafraîchir les données toutes les 2 minutes exactement.
      */
     private void startUiUpdates() {
         try {
@@ -140,38 +148,11 @@ public class StatsView {
                 return t;
             });
 
-            // Update the session duration every second
-            uiUpdater.scheduleAtFixedRate(() -> {
-                try {
-                    if (monitoringCoordinator.getSessionStartTime() != null) {
-                        Platform.runLater(() -> {
-                            try {
-                                String duration = monitoringCoordinator.getSessionDuration();
-                                summaryPanel.setSessionDuration(duration);
-                            } catch (Exception e) {
-                                LOGGER.debug("Error updating session duration", e);
-                            }
-                        });
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Error in session duration scheduler", e);
-                }
-            }, 0, 1, TimeUnit.SECONDS);
-
-            // Update the stats display every minute, mais juste si les données ont changé
-            uiUpdater.scheduleAtFixedRate(() -> {
-                try {
-                    UserStats currentStats = monitoringCoordinator.getCurrentStats();
-                    if (currentStats != null &&
-                            (lastDisplayedStats == null || !currentStats.equals(lastDisplayedStats) || dataUpdated)) {
-                        refreshView();
-                        lastDisplayedStats = currentStats;
-                        dataUpdated = false;
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Error checking for stats updates", e);
-                }
-            }, 0, UI_UPDATE_INTERVAL_SECONDS, TimeUnit.SECONDS);
+            // Mise à jour complète des stats toutes les 2 minutes
+            uiUpdater.scheduleAtFixedRate(
+                    () -> Platform.runLater(this::refreshView),
+                    0, FETCH_INTERVAL_MINUTES, TimeUnit.MINUTES
+            );
 
             LOGGER.info("UI updater started successfully");
         } catch (Exception e) {
@@ -181,46 +162,50 @@ public class StatsView {
 
     /**
      * Refreshes the entire view.
+     * Mise à jour indépendante des changements des stats.
      */
     private void refreshView() {
-        Platform.runLater(() -> {
-            try {
-                LOGGER.debug("Refreshing view with updated stats");
+        try {
+            LOGGER.debug("Refreshing view with updated stats");
 
-                // Update header text with current player
-                updateHeaderLabel();
+            // Update header text with current player
+            updateHeaderLabel();
 
-                // Get the latest data
-                UserStats currentStats = monitoringCoordinator.getCurrentStats();
+            // Get the latest data
+            UserStats currentStats = monitoringCoordinator.getCurrentStats();
 
-                // Skip if no data
-                if (currentStats == null) {
-                    return;
-                }
-
-                // Update the general panel
-                generalPanel.updateStats(currentStats);
-
-                // Update session-specific panels if a session is active
-                if (monitoringCoordinator.getSessionStartTime() != null) {
-                    // Get session history
-                    List<SessionStats> history = monitoringCoordinator.getSessionHistory();
-
-                    // Update chart - seulement si l'historique a changé
-                    if (!history.isEmpty()) {
-                        chartPanel.setSessionStartTime(monitoringCoordinator.getSessionStartTime());
-                        chartPanel.updateChart(history);
-                    }
-
-                    // Calculate and update session metrics
-                    PlayerMonitoringCoordinator.SessionMetrics metrics =
-                            monitoringCoordinator.calculateSessionMetrics();
-                    summaryPanel.updateSessionMetrics(metrics);
-                }
-            } catch (Exception e) {
-                LOGGER.debug("Error refreshing view", e);
+            // Skip if no data
+            if (currentStats == null) {
+                return;
             }
-        });
+
+            // Update the general panel
+            generalPanel.updateStats(currentStats);
+            lastDisplayedStats = currentStats;
+
+            // Update session-specific panels if a session is active
+            if (monitoringCoordinator.getSessionStartTime() != null) {
+                // Définir/mettre à jour le temps de départ pour le timer
+                Instant startTime = monitoringCoordinator.getSessionStartTime();
+                summaryPanel.setSessionStartTime(startTime);
+
+                // Get session history
+                List<SessionStats> history = monitoringCoordinator.getSessionHistory();
+
+                // Update chart avec historique toujours mis à jour
+                if (!history.isEmpty()) {
+                    chartPanel.setSessionStartTime(startTime);
+                    chartPanel.updateChart(history);
+                }
+
+                // Calculate and update session metrics
+                PlayerMonitoringCoordinator.SessionMetrics metrics =
+                        monitoringCoordinator.calculateSessionMetrics();
+                summaryPanel.updateSessionMetrics(metrics);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error refreshing view", e);
+        }
     }
 
     /**
@@ -230,23 +215,18 @@ public class StatsView {
     public void refreshOnPlayerChange() {
         try {
             startUiUpdates(); // Restart UI updates
-            updateHeaderLabel();
-            dataUpdated = true; // Forcer un rafraîchissement
 
-            // Set latest stats as initial for trend calculation
+            // Update initial stats for trend calculation
             UserStats currentStats = monitoringCoordinator.getCurrentStats();
             if (currentStats != null) {
                 summaryPanel.setInitialStats(currentStats);
+                lastDisplayedStats = currentStats;
             }
+
+            // Mettre à jour l'affichage complet
+            refreshView();
         } catch (Exception e) {
             LOGGER.error("Error refreshing on player change", e);
         }
-    }
-
-    /**
-     * Force l'actualisation des données
-     */
-    public void notifyDataUpdated() {
-        dataUpdated = true;
     }
 }

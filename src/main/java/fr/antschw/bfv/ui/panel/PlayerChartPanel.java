@@ -7,8 +7,8 @@ import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.Cursor;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -18,26 +18,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
  * Panel displaying charts of player statistics evolution during the session.
- * Improved with better legend and larger height, avec correction des couleurs.
+ * Avec légende cliquable et redimensionnement automatique du graphique.
  */
 public class PlayerChartPanel extends VBox {
     private static final Logger LOGGER = LoggerFactory.getLogger(PlayerChartPanel.class);
     private final ResourceBundle bundle = I18nUtils.getBundle();
 
-    // Modifié pour ne plus être final
     private LineChart<Number, Number> chart;
     private final XYChart.Series<Number, Number> kdSeries = new XYChart.Series<>();
     private final XYChart.Series<Number, Number> kpmSeries = new XYChart.Series<>();
     private final XYChart.Series<Number, Number> hsPercentSeries = new XYChart.Series<>();
 
-    private final CheckBox kdCheckbox = new CheckBox();
-    private final CheckBox kpmCheckbox = new CheckBox();
-    private final CheckBox hsCheckbox = new CheckBox();
+    // Composants de légende pour les séries
+    private HBox kdLegendItem;
+    private HBox kpmLegendItem;
+    private HBox hsLegendItem;
+    private Circle kdCircle;
+    private Circle kpmCircle;
+    private Circle hsCircle;
+
+    // Map pour suivre la visibilité des séries
+    private final Map<XYChart.Series<Number, Number>, Boolean> seriesVisibility = new HashMap<>();
 
     private Instant sessionStartTime;
 
@@ -48,6 +57,12 @@ public class PlayerChartPanel extends VBox {
 
     // Nombre actuel de points dans le graphique
     private int currentPointCount = 0;
+
+    // Intervalle de fetch en minutes (pour le calcul de l'axe X)
+    private static final int FETCH_INTERVAL_MINUTES = 2;
+
+    // Taille initiale de la vue en minutes
+    private static final int INITIAL_VIEW_MINUTES = 10;
 
     public PlayerChartPanel() {
         LOGGER.info("Initializing PlayerChartPanel");
@@ -60,20 +75,22 @@ public class PlayerChartPanel extends VBox {
             Label headerLabel = new Label(bundle.getString("stats.chart.title"));
             headerLabel.getStyleClass().add("header-label");
 
-            // Set up the chart
-            NumberAxis xAxis = new NumberAxis(0, 60, 10); // Commence à 0
+            // Set up the chart with fixed initial scale
+            NumberAxis xAxis = new NumberAxis(0, INITIAL_VIEW_MINUTES, 2);
             xAxis.setLabel(bundle.getString("stats.chart.x_axis"));
-            xAxis.setTickLabelRotation(0); // Éviter rotation
+            xAxis.setTickLabelRotation(0);
+            xAxis.setAnimated(false);
 
             NumberAxis yAxis = new NumberAxis();
             yAxis.setLabel(bundle.getString("stats.chart.y_axis"));
+            yAxis.setAnimated(false);
 
             chart = new LineChart<>(xAxis, yAxis);
             chart.setTitle(null); // We use the header label instead
             chart.setAnimated(false);
             chart.setCreateSymbols(true);
             chart.setLegendVisible(false); // We'll create our own legend
-            chart.setMinHeight(300); // Plus grand
+            chart.setMinHeight(300);
             chart.setPrefHeight(300);
 
             // Initialize series with custom names
@@ -81,30 +98,17 @@ public class PlayerChartPanel extends VBox {
             kpmSeries.setName(bundle.getString("stats.chart.kpm"));
             hsPercentSeries.setName(bundle.getString("stats.chart.headshots"));
 
-            // Créer une légende personnalisée
+            // Initialiser map de visibilité
+            seriesVisibility.put(kdSeries, true);
+            seriesVisibility.put(kpmSeries, true);
+            seriesVisibility.put(hsPercentSeries, true);
+
+            // Créer une légende cliquable
             HBox legend = createLegend();
-
-            // Set up checkboxes to toggle series visibility
-            kdCheckbox.setText(bundle.getString("stats.chart.kd"));
-            kdCheckbox.setSelected(true);
-            kdCheckbox.setOnAction(e -> updateSeriesVisibility());
-
-            kpmCheckbox.setText(bundle.getString("stats.chart.kpm"));
-            kpmCheckbox.setSelected(true);
-            kpmCheckbox.setOnAction(e -> updateSeriesVisibility());
-
-            hsCheckbox.setText(bundle.getString("stats.chart.headshots"));
-            hsCheckbox.setSelected(true);
-            hsCheckbox.setOnAction(e -> updateSeriesVisibility());
-
-            // Add checkboxes to a horizontal box
-            HBox controls = new HBox(15);
-            controls.setPadding(new Insets(5, 0, 0, 10));
-            controls.getChildren().addAll(kdCheckbox, kpmCheckbox, hsCheckbox);
 
             // Add all elements to the panel
             VBox.setVgrow(chart, Priority.ALWAYS);
-            this.getChildren().addAll(headerLabel, legend, chart, controls);
+            this.getChildren().addAll(headerLabel, legend, chart);
 
             LOGGER.info("PlayerChartPanel initialized successfully");
         } catch (Exception e) {
@@ -122,13 +126,13 @@ public class PlayerChartPanel extends VBox {
             this.getChildren().clear();
             this.getChildren().addAll(
                     new Label("Chart could not be initialized: " + e.getMessage()),
-                    chart  // Ajouter quand même le graphique, même s'il est vide
+                    chart
             );
         }
     }
 
     /**
-     * Creates a custom legend for the chart.
+     * Creates a custom legend for the chart with clickable items.
      */
     private HBox createLegend() {
         HBox legend = new HBox(20);
@@ -136,28 +140,63 @@ public class PlayerChartPanel extends VBox {
         legend.setAlignment(Pos.CENTER);
 
         // K/D legend item
-        Circle kdCircle = new Circle(6);
+        kdCircle = new Circle(6);
         kdCircle.setFill(Color.web(KD_COLOR));
         kdCircle.setStroke(Color.web(KD_COLOR).darker());
         kdCircle.setStrokeWidth(1);
-        HBox kdItem = new HBox(5, kdCircle, new Label(bundle.getString("stats.chart.kd")));
+        Label kdLabel = new Label(bundle.getString("stats.chart.kd"));
+        kdLegendItem = new HBox(5, kdCircle, kdLabel);
+        kdLegendItem.getStyleClass().add("legend-item");
+        kdLegendItem.setCursor(Cursor.HAND);
+        kdLegendItem.setOnMouseClicked(e -> toggleSeries(kdSeries, kdLegendItem, kdCircle));
 
         // KPM legend item
-        Circle kpmCircle = new Circle(6);
+        kpmCircle = new Circle(6);
         kpmCircle.setFill(Color.web(KPM_COLOR));
         kpmCircle.setStroke(Color.web(KPM_COLOR).darker());
         kpmCircle.setStrokeWidth(1);
-        HBox kpmItem = new HBox(5, kpmCircle, new Label(bundle.getString("stats.chart.kpm")));
+        Label kpmLabel = new Label(bundle.getString("stats.chart.kpm"));
+        kpmLegendItem = new HBox(5, kpmCircle, kpmLabel);
+        kpmLegendItem.getStyleClass().add("legend-item");
+        kpmLegendItem.setCursor(Cursor.HAND);
+        kpmLegendItem.setOnMouseClicked(e -> toggleSeries(kpmSeries, kpmLegendItem, kpmCircle));
 
         // Headshots legend item
-        Circle hsCircle = new Circle(6);
+        hsCircle = new Circle(6);
         hsCircle.setFill(Color.web(HS_COLOR));
         hsCircle.setStroke(Color.web(HS_COLOR).darker());
         hsCircle.setStrokeWidth(1);
-        HBox hsItem = new HBox(5, hsCircle, new Label(bundle.getString("stats.chart.headshots")));
+        Label hsLabel = new Label(bundle.getString("stats.chart.headshots"));
+        hsLegendItem = new HBox(5, hsCircle, hsLabel);
+        hsLegendItem.getStyleClass().add("legend-item");
+        hsLegendItem.setCursor(Cursor.HAND);
+        hsLegendItem.setOnMouseClicked(e -> toggleSeries(hsPercentSeries, hsLegendItem, hsCircle));
 
-        legend.getChildren().addAll(kdItem, kpmItem, hsItem);
+        legend.getChildren().addAll(kdLegendItem, kpmLegendItem, hsLegendItem);
+
         return legend;
+    }
+
+    /**
+     * Toggle visibility of a series by clicking on legend item.
+     */
+    private void toggleSeries(XYChart.Series<Number, Number> series, HBox legendItem, Circle legendCircle) {
+        boolean visible = seriesVisibility.get(series);
+        visible = !visible;
+        seriesVisibility.put(series, visible);
+
+        if (visible) {
+            // Show series
+            legendItem.setOpacity(1.0);
+            legendCircle.setOpacity(1.0);
+        } else {
+            // Hide series
+            legendItem.setOpacity(0.5);
+            legendCircle.setOpacity(0.5);
+        }
+
+        // Update chart data based on visibility
+        updateSeriesVisibility();
     }
 
     /**
@@ -182,7 +221,7 @@ public class PlayerChartPanel extends VBox {
 
     /**
      * Updates the chart with session history data.
-     * Optimisé pour ne redessiner que si le nombre de points a changé.
+     * Utilise l'intervalle fixe de 2 minutes entre chaque échantillon.
      */
     public void updateChart(List<SessionStats> history) {
         try {
@@ -204,40 +243,43 @@ public class PlayerChartPanel extends VBox {
             kpmSeries.getData().clear();
             hsPercentSeries.getData().clear();
 
-            // Add data points - uniquement les données de session
-            // Pour ne pas montrer les statistiques globales
+            // Add data points - maintenant basés uniquement sur l'intervalle fixe de session
             if (history.size() >= 2) {
                 SessionStats first = history.get(0);
 
                 for (int i = 0; i < history.size(); i++) {
                     SessionStats stats = history.get(i);
 
-                    // Calculate minutes since session start - commence à 0
-                    double minutesSinceStart = (stats.timestamp().toEpochMilli() - sessionStartTime.toEpochMilli()) / 60000.0;
+                    // Position en X basée sur l'intervalle fixe entre les échantillons
+                    double minutesSinceStart = i * FETCH_INTERVAL_MINUTES;
 
-                    // Calculer les valeurs de session, pas les globales
-                    double sessionKD = 0;
-                    double sessionKPM = 0;
-                    double sessionHSPercent = 0;
+                    if (i > 0) {
+                        SessionStats previous = history.get(i-1);
 
-                    int sessionKills = stats.kills() - first.kills();
-                    int sessionDeaths = stats.deaths() - first.deaths();
+                        // Calculer les deltas entre les échantillons
+                        int deltaKills = stats.kills() - previous.kills();
+                        int deltaDeaths = stats.deaths() - previous.deaths();
 
-                    // K/D de session
-                    sessionKD = sessionDeaths > 0 ? (double) sessionKills / sessionDeaths : sessionKills;
+                        // K/D pour l'intervalle actuel
+                        double intervalKD = deltaDeaths > 0 ? (double) deltaKills / deltaDeaths :
+                                (deltaKills > 0 ? deltaKills : stats.killDeath());
 
-                    // KPM de session basé sur le temps de jeu réel
-                    long sessionSeconds = stats.secondsPlayed() - first.secondsPlayed();
-                    sessionKPM = sessionSeconds > 0 ? (double) sessionKills / (sessionSeconds / 60.0) : 0;
+                        // KPM pour l'intervalle actuel (basé sur l'intervalle fixe)
+                        double intervalKPM = (double) deltaKills / FETCH_INTERVAL_MINUTES;
 
-                    // Calculer le pourcentage de headshots de session si possible
-                    // Pour l'instant on garde le global car nous n'avons pas cette donnée par session
-                    sessionHSPercent = parsePercentage(stats.headshots());
+                        // Headshot rate (on garde celui global pour le moment)
+                        double headshots = parsePercentage(stats.headshots());
 
-                    // Add data to series
-                    kdSeries.getData().add(new XYChart.Data<>(minutesSinceStart, sessionKD));
-                    kpmSeries.getData().add(new XYChart.Data<>(minutesSinceStart, sessionKPM));
-                    hsPercentSeries.getData().add(new XYChart.Data<>(minutesSinceStart, sessionHSPercent));
+                        // Ajouter les points
+                        kdSeries.getData().add(new XYChart.Data<>(minutesSinceStart, intervalKD));
+                        kpmSeries.getData().add(new XYChart.Data<>(minutesSinceStart, intervalKPM));
+                        hsPercentSeries.getData().add(new XYChart.Data<>(minutesSinceStart, headshots));
+                    } else {
+                        // Pour le premier point, on utilise les stats globales comme point de référence
+                        kdSeries.getData().add(new XYChart.Data<>(minutesSinceStart, stats.killDeath()));
+                        kpmSeries.getData().add(new XYChart.Data<>(minutesSinceStart, stats.killsPerMinute()));
+                        hsPercentSeries.getData().add(new XYChart.Data<>(minutesSinceStart, parsePercentage(stats.headshots())));
+                    }
                 }
             } else {
                 // S'il n'y a qu'un seul point, on montre les stats globales à 0 minutes
@@ -249,14 +291,44 @@ public class PlayerChartPanel extends VBox {
                 hsPercentSeries.getData().add(new XYChart.Data<>(minutesSinceStart, parsePercentage(stats.headshots())));
             }
 
+            // Adapter l'axe des X en fonction de la durée de session
+            adjustXAxisRange(history.size());
+
+            // Mise à jour de l'affichage en fonction de la visibilité des séries
             updateSeriesVisibility();
+
+            // Appliquer le style et les tooltips
+            applySeriesStyles();
         } catch (Exception e) {
             LOGGER.error("Error updating chart", e);
         }
     }
 
     /**
-     * Updates the visibility of chart series based on checkbox state.
+     * Adjusts the X-axis range based on the number of data points.
+     * Initially shows 10 minutes, then expands as needed.
+     */
+    private void adjustXAxisRange(int dataPointCount) {
+        if (chart == null) return;
+
+        NumberAxis xAxis = (NumberAxis) chart.getXAxis();
+
+        // Calculate minutes represented by all data points
+        double totalMinutes = (dataPointCount - 1) * FETCH_INTERVAL_MINUTES;
+
+        // Keep initial view of 10 minutes until we exceed that
+        if (totalMinutes <= INITIAL_VIEW_MINUTES) {
+            xAxis.setUpperBound(INITIAL_VIEW_MINUTES);
+        } else {
+            // Extend the view to show all data
+            // Round up to next multiple of interval for cleaner display
+            double upperBound = Math.ceil(totalMinutes / FETCH_INTERVAL_MINUTES) * FETCH_INTERVAL_MINUTES;
+            xAxis.setUpperBound(upperBound);
+        }
+    }
+
+    /**
+     * Updates the visibility of chart series based on seriesVisibility map.
      */
     private void updateSeriesVisibility() {
         try {
@@ -266,69 +338,31 @@ public class PlayerChartPanel extends VBox {
 
             chart.getData().clear();
 
-            if (kdCheckbox.isSelected()) {
+            if (seriesVisibility.get(kdSeries)) {
                 chart.getData().add(kdSeries);
             }
 
-            if (kpmCheckbox.isSelected()) {
+            if (seriesVisibility.get(kpmSeries)) {
                 chart.getData().add(kpmSeries);
             }
 
-            if (hsCheckbox.isSelected()) {
+            if (seriesVisibility.get(hsPercentSeries)) {
                 chart.getData().add(hsPercentSeries);
             }
-
-            // Apply styling
-            applySeriesTooltips();
-            applySeriesStyling();
         } catch (Exception e) {
             LOGGER.error("Error updating series visibility", e);
         }
     }
 
     /**
-     * Applies tooltips to data points.
+     * Applies styles and tooltips to all series in the chart.
      */
-    private void applySeriesTooltips() {
+    private void applySeriesStyles() {
         try {
-            if (chart == null) {
-                return;
-            }
-
-            // Apply tooltips to each data point
-            for (XYChart.Series<Number, Number> series : chart.getData()) {
-                if (series == null) continue;
-
-                String seriesName = series.getName();
-
-                for (XYChart.Data<Number, Number> data : series.getData()) {
-                    if (data == null || data.getNode() == null) continue;
-
-                    double time = data.getXValue().doubleValue();
-                    double value = data.getYValue().doubleValue();
-
-                    String tooltip = String.format("%s: %.2f\nTime: %.1f min", seriesName, value, time);
-                    javafx.scene.control.Tooltip.install(data.getNode(), new javafx.scene.control.Tooltip(tooltip));
-                }
-            }
-        } catch (Exception e) {
-            LOGGER.debug("Error applying tooltips", e);
-        }
-    }
-
-    /**
-     * Applies CSS styling to series.
-     */
-    private void applySeriesStyling() {
-        try {
-            if (chart == null) {
-                return;
-            }
-
             for (XYChart.Series<Number, Number> series : chart.getData()) {
                 if (series == null || series.getNode() == null) continue;
 
-                // Appliquer style direct plutôt que classes CSS
+                // Apply style to the series line
                 if (series == kdSeries) {
                     series.getNode().setStyle("-fx-stroke: " + KD_COLOR + "; -fx-stroke-width: 2px;");
                 } else if (series == kpmSeries) {
@@ -337,32 +371,47 @@ public class PlayerChartPanel extends VBox {
                     series.getNode().setStyle("-fx-stroke: " + HS_COLOR + "; -fx-stroke-width: 2px;");
                 }
 
-                // Appliquer le style aux points de données
+                // Apply style to each data point and add tooltips
                 for (XYChart.Data<Number, Number> data : series.getData()) {
-                    if (data.getNode() != null) {
-                        String fillColor;
+                    if (data.getNode() == null) continue;
 
-                        if (series == kdSeries) {
-                            fillColor = KD_COLOR;
-                        } else if (series == kpmSeries) {
-                            fillColor = KPM_COLOR;
-                        } else if (series == hsPercentSeries) {
-                            fillColor = HS_COLOR;
-                        } else {
-                            continue;
-                        }
+                    String fillColor;
+                    String seriesName;
 
-                        // Appliquer le style directement
-                        data.getNode().setStyle(
-                                "-fx-background-color: " + fillColor + ", white;" +
-                                        "-fx-background-radius: 5px;" +
-                                        "-fx-padding: 5px;"
-                        );
+                    if (series == kdSeries) {
+                        fillColor = KD_COLOR;
+                        seriesName = bundle.getString("stats.chart.kd");
+                    } else if (series == kpmSeries) {
+                        fillColor = KPM_COLOR;
+                        seriesName = bundle.getString("stats.chart.kpm");
+                    } else if (series == hsPercentSeries) {
+                        fillColor = HS_COLOR;
+                        seriesName = bundle.getString("stats.chart.headshots");
+                    } else {
+                        continue;
                     }
+
+                    // Style the data point
+                    data.getNode().setStyle(
+                            "-fx-background-color: " + fillColor + ", white;" +
+                                    "-fx-background-radius: 5px;" +
+                                    "-fx-padding: 5px;"
+                    );
+
+                    // Add tooltip
+                    double time = data.getXValue().doubleValue();
+                    double value = data.getYValue().doubleValue();
+                    String tooltip = String.format("%s: %.2f\n%s: %.1f %s",
+                            seriesName, value,
+                            bundle.getString("stats.chart.x_axis"), time,
+                            bundle.getString("stats.session.minutes"));
+
+                    javafx.scene.control.Tooltip.install(data.getNode(),
+                            new javafx.scene.control.Tooltip(tooltip));
                 }
             }
         } catch (Exception e) {
-            LOGGER.debug("Error applying series styling", e);
+            LOGGER.debug("Error applying series styles", e);
         }
     }
 }

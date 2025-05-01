@@ -1,5 +1,6 @@
 package fr.antschw.bfv.ui.panel;
 
+import fr.antschw.bfv.ui.component.TimerComponent;
 import fr.antschw.bfv.ui.control.table.PlayerNameLinkCell;
 import fr.antschw.bfv.ui.control.table.PlayerTableRow;
 import fr.antschw.bfv.application.util.I18nUtils;
@@ -30,6 +31,7 @@ import java.util.List;
 /**
  * Panel that shows a scrollable table of players, highlights suspicious ones,
  * and displays loading / error placeholders.
+ * Maintenant avec support pour TimerComponent.
  */
 public class PlayersPanel extends VBox {
 
@@ -41,9 +43,9 @@ public class PlayersPanel extends VBox {
     // Compteur de joueurs suspects
     private final Label countLabel = new Label("0");
     private final ProgressIndicator countSpinner = new ProgressIndicator();
-    
-    // Label pour le temps (référence externe)
-    private Label timeLabel;
+
+    // Composant timer (référence externe)
+    private TimerComponent timeComponent;
 
     public PlayersPanel() {
         this.setSpacing(4);  // Reduced spacing
@@ -61,7 +63,7 @@ public class PlayersPanel extends VBox {
 
         // Configuration du compteur
         countLabel.getStyleClass().add("count-label");
-        
+
         // Spacer pour pousser le temps à droite
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -70,8 +72,8 @@ public class PlayersPanel extends VBox {
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
         header.getChildren().addAll(headerLabel, countLabel, countSpinner, spacer);
-        
-        // Le timeLabel sera injecté plus tard via setTimeLabel()
+
+        // Le timeComponent sera injecté plus tard via setTimeLabel()
 
         // Table setup
         table.setItems(data);
@@ -184,12 +186,12 @@ public class PlayersPanel extends VBox {
         table.widthProperty().addListener((ObservableValue<? extends Number> source, Number oldWidth, Number newWidth) -> {
             // Calculer l'espace disponible après avoir attribué à idCol ce dont elle a besoin
             double remainingSpace = newWidth.doubleValue() - idCol.getWidth() - 20; // 20px pour le scrollbar
-            
+
             // Diviser l'espace restant équitablement entre les autres colonnes
             int remainingColumns = table.getColumns().size() - 1; // sans la colonne ID
             if (remainingColumns > 0 && remainingSpace > 0) {
                 double columnWidth = remainingSpace / remainingColumns;
-                
+
                 rankCol.setPrefWidth(columnWidth);
                 kdCol.setPrefWidth(columnWidth);
                 kpmCol.setPrefWidth(columnWidth);
@@ -224,32 +226,32 @@ public class PlayersPanel extends VBox {
         VBox.setVgrow(table, Priority.ALWAYS);
         this.getChildren().addAll(header, table);
     }
-    
+
     /**
-     * Définit le label pour l'affichage du temps et l'ajoute à l'en-tête
-     * 
-     * @param timeLabel le label pour l'affichage du temps
+     * Définit le timer component pour l'affichage du temps et l'ajoute à l'en-tête
+     *
+     * @param timeComponent le composant timer pour l'affichage du temps
      */
-    public void setTimeLabel(Label timeLabel) {
-        this.timeLabel = timeLabel;
-        
+    public void setTimeLabel(TimerComponent timeComponent) {
+        this.timeComponent = timeComponent;
+
         // Récupérer la HBox d'en-tête
         HBox header = (HBox) getChildren().get(0);
-        
-        // Ajouter le timeLabel à l'en-tête s'il n'y est pas déjà
-        if (!header.getChildren().contains(timeLabel)) {
-            header.getChildren().add(timeLabel);
+
+        // Ajouter le timeComponent à l'en-tête s'il n'y est pas déjà
+        if (!header.getChildren().contains(timeComponent)) {
+            header.getChildren().add(timeComponent);
         }
     }
 
     /**
      * Calcule la largeur requise pour la colonne ID basée sur le contenu le plus long.
-     * 
+     *
      * @return la largeur recommandée en pixels
      */
     private double calculateRequiredIdWidth() {
         double maxWidth = 150; // Largeur minimale
-        
+
         // Utilise une heuristique simple: 9 pixels par caractère + marge de 20px
         for (PlayerTableRow row : data) {
             String name = row.getName();
@@ -258,7 +260,7 @@ public class PlayersPanel extends VBox {
                 maxWidth = Math.max(maxWidth, requiredWidth);
             }
         }
-        
+
         // Limiter à une taille maximale raisonnable
         return Math.min(maxWidth, 300);
     }
@@ -268,20 +270,20 @@ public class PlayersPanel extends VBox {
      */
     public void optimizeColumnWidths() {
         if (data.isEmpty()) return;
-        
+
         // Pour la colonne ID
         double idWidth = calculateRequiredIdWidth();
         TableColumn<PlayerTableRow, ?> idColumn = table.getColumns().get(0);
         idColumn.setPrefWidth(idWidth);
-        
+
         // Déclencher un recalcul des autres colonnes
         double width = table.getWidth();
         double remainingSpace = width - idWidth - 20; // 20px pour le scrollbar
         int remainingColumns = table.getColumns().size() - 1;
-        
+
         if (remainingColumns > 0 && remainingSpace > 0) {
             double columnWidth = remainingSpace / remainingColumns;
-            
+
             for (int i = 1; i < table.getColumns().size(); i++) {
                 table.getColumns().get(i).setPrefWidth(columnWidth);
             }
@@ -361,7 +363,7 @@ public class PlayersPanel extends VBox {
                 .count();
 
         countLabel.setText(String.valueOf(suspiciousCount));
-        
+
         // Optimiser les largeurs des colonnes quand tous les joueurs sont chargés
         optimizeColumnWidths();
     }
@@ -383,7 +385,7 @@ public class PlayersPanel extends VBox {
     public void finishLoading() {
         table.setPlaceholder(new Label(bundle.getString("server.players.empty")));
         countSpinner.setVisible(false);
-        
+
         // Optimiser les colonnes après le chargement complet
         optimizeColumnWidths();
     }

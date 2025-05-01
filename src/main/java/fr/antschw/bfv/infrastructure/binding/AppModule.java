@@ -1,5 +1,6 @@
 package fr.antschw.bfv.infrastructure.binding;
 
+import fr.antschw.bfv.domain.service.SettingsService;
 import fr.antschw.bfv.domain.service.UserStatsCacheService;
 import fr.antschw.bfv.application.orchestrator.PlayerMonitoringCoordinator;
 import fr.antschw.bfv.application.orchestrator.PlayerStatsFilter;
@@ -20,7 +21,9 @@ import fr.antschw.bfv.infrastructure.hotkey.HotkeyConfigurationAdapter;
 import fr.antschw.bfv.infrastructure.hotkey.HotkeyListenerAdapter;
 import fr.antschw.bfv.infrastructure.monitoring.PlayerMonitoringAdapter;
 import fr.antschw.bfv.infrastructure.screenshot.ScreenshotAdapter;
+import fr.antschw.bfv.infrastructure.settings.SettingsServiceImpl;
 import fr.antschw.bfv.ui.MainController;
+import fr.antschw.bfv.ui.component.TimerComponent;
 import fr.antschw.bfv.ui.view.ServerView;
 import fr.antschw.bfv.ui.view.SettingsView;
 import fr.antschw.bfv.ui.view.StatsView;
@@ -41,6 +44,11 @@ public class AppModule extends AbstractModule {
     protected void configure() {
         try {
             LOGGER.info("Configuring AppModule bindings");
+
+            // Service de paramètres (nouveau)
+            bind(SettingsService.class)
+                    .to(SettingsServiceImpl.class)
+                    .asEagerSingleton();
 
             // Screenshot adapter
             bind(ScreenshotService.class)
@@ -91,6 +99,9 @@ public class AppModule extends AbstractModule {
             bind(SettingsView.class);
             bind(ServerScanCoordinator.class);
             bind(PlayerStatsFilter.class);
+
+            // Composants UI personnalisés (nouveaux)
+            bind(TimerComponent.class);
 
             bind(BFVOcrService.class).toInstance(BFVOcrFactory.createDefaultService());
 

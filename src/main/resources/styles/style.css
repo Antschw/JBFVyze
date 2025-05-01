@@ -490,3 +490,157 @@
 .switch-checkbox:selected .box .mark {
     -fx-translate-x: 8;
 }
+
+/* ===========================================
+   GRAPHIQUE STATISTIQUES
+   =========================================== */
+
+/* Légendes cliquables */
+.legend-item {
+    -fx-padding: 3px 8px;
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-border-color: -color-border-muted;
+    -fx-border-width: 1px;
+    -fx-cursor: hand;
+}
+
+.legend-item:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 3, 0, 0, 1);
+}
+
+/* Données du graphique */
+.kd-series {
+    -fx-stroke: #4CAF50;
+    -fx-stroke-width: 2px;
+}
+
+.kpm-series {
+    -fx-stroke: #2196F3;
+    -fx-stroke-width: 2px;
+}
+
+.hs-series {
+    -fx-stroke: #FFC107;
+    -fx-stroke-width: 2px;
+}
+
+/* Labels pour les axes */
+.chart-axis .axis-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: normal;
+}
+
+/* Points de données */
+.chart-line-symbol {
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+
+/* Fond du graphique */
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+/* Grille en arrière-plan */
+.chart-vertical-grid-lines {
+    -fx-stroke: -color-border-muted;
+    -fx-stroke-dash-array: 2 2;
+}
+
+.chart-horizontal-grid-lines {
+    -fx-stroke: -color-border-muted;
+    -fx-stroke-dash-array: 2 2;
+}
+
+/* Bouton désactivé pour les légendes */
+.legend-item.disabled {
+    -fx-opacity: 0.5;
+}
+
+/* ===========================================
+   COMPOSANT TIMER
+   =========================================== */
+
+.timer-component {
+    -fx-background-color: -color-accent-subtle;
+    -fx-text-fill: -color-accent-fg;
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-padding: 3px 10px;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+/* Style pour les labels de minutes/secondes */
+.timer-minutes {
+    -fx-text-fill: -color-accent-fg;
+    -fx-font-weight: bold;
+}
+
+.timer-seconds {
+    -fx-text-fill: -color-accent-muted;
+}
+
+/* ===========================================
+   NAVIGATION
+   =========================================== */
+
+/* Boutons de navigation */
+.nav-button {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-border-color: -color-border-subtle;
+    -fx-padding: 8px 15px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: -color-bg-inset;
+}
+
+.nav-button:pressed {
+    -fx-background-color: -color-accent-subtle;
+    -fx-border-color: -color-accent-muted;
+    -fx-text-fill: -color-accent-fg;
+}
+
+/* Etat actif des boutons de navigation */
+.nav-button.active {
+    -fx-background-color: -color-accent-subtle;
+    -fx-border-color: -color-accent-muted;
+    -fx-text-fill: -color-accent-fg;
+}
+
+/* ===========================================
+   GESTION DU THÈME (CUSTOMISATION)
+   =========================================== */
+
+/* Style de la fenêtre elle-même (pas le root) */
+.root {
+    -fx-background-color: -color-bg-default;
+    -fx-border-width: 0px; /* Pas de bordure supplémentaire */
+}
+
+/* Bouton bascule de thème */
+.theme-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4px;
+    -fx-padding: 5px;
+    -fx-cursor: hand;
+    -fx-min-width: 30px;
+    -fx-min-height: 25px;
+    -fx-content-display: graphic-only;
+}
+
+.theme-button:hover {
+    -fx-background-color: -color-bg-inset;
+}
+
+.theme-button:pressed {
+    -fx-background-color: -color-accent-subtle;
+}

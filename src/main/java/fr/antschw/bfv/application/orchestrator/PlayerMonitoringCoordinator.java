@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import fr.antschw.bfv.domain.model.SessionStats;
 import fr.antschw.bfv.domain.model.UserStats;
 import fr.antschw.bfv.domain.service.PlayerMonitoringService;
+import fr.antschw.bfv.domain.service.SettingsService;
 import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,17 +18,40 @@ import java.util.function.Consumer;
 
 /**
  * Coordinates monitoring a player's statistics over time.
+ * Maintenant avec support pour la persistance des paramètres.
  */
 public class PlayerMonitoringCoordinator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PlayerMonitoringCoordinator.class);
+    private static final int FETCH_INTERVAL_MINUTES = 2; // Intervalle fixe de 2 minutes
 
     private final PlayerMonitoringService monitoringService;
+    private final SettingsService settingsService;
 
     @Inject
-    public PlayerMonitoringCoordinator(PlayerMonitoringService monitoringService) {
+    public PlayerMonitoringCoordinator(
+            PlayerMonitoringService monitoringService,
+            SettingsService settingsService) {
         this.monitoringService = monitoringService;
+        this.settingsService = settingsService;
         LOGGER.info("PlayerMonitoringCoordinator initialized");
+
+        // Charger automatiquement le joueur sauvegardé s'il existe
+        loadSavedPlayer();
+    }
+
+    /**
+     * Charge et démarre le monitoring du joueur sauvegardé dans les paramètres.
+     */
+    private void loadSavedPlayer() {
+        String playerName = settingsService.getPlayerName();
+        if (playerName != null && !playerName.isEmpty()) {
+            boolean isPlayerId = settingsService.isUsePlayerId();
+            LOGGER.info("Loading saved player: {} (isPlayerId: {})", playerName, isPlayerId);
+
+            // Démarrer le monitoring sans callback (sera géré par StatsView plus tard)
+            startMonitoring(playerName, isPlayerId, null);
+        }
     }
 
     /**
@@ -45,12 +69,18 @@ public class PlayerMonitoringCoordinator {
 
         LOGGER.info("Starting player monitoring for: {}", playerIdentifier);
         try {
+            // Sauvegarder les paramètres
+            settingsService.setPlayerName(playerIdentifier);
+            settingsService.setUsePlayerId(isPlayerId);
+
             monitoringService.startMonitoring(playerIdentifier, isPlayerId,
                     stats -> {
                         if (stats != null) {
                             Platform.runLater(() -> {
                                 try {
-                                    onStatsUpdated.accept(stats);
+                                    if (onStatsUpdated != null) {
+                                        onStatsUpdated.accept(stats);
+                                    }
                                 } catch (Exception e) {
                                     LOGGER.error("Error in stats update callback", e);
                                 }
@@ -155,10 +185,11 @@ public class PlayerMonitoringCoordinator {
             Duration duration = Duration.between(startTime, Instant.now());
             long hours = duration.toHours();
             long minutes = duration.minusHours(hours).toMinutes();
+            long seconds = duration.minusHours(hours).minusMinutes(minutes).getSeconds();
 
             return hours > 0
-                    ? String.format("%dh %02dm", hours, minutes)
-                    : String.format("%dm", minutes);
+                    ? String.format("%dh %02dm %02ds", hours, minutes, seconds)
+                    : String.format("%dm %02ds", minutes, seconds);
         } catch (Exception e) {
             LOGGER.error("Error calculating session duration", e);
             return "";
@@ -166,7 +197,9 @@ public class PlayerMonitoringCoordinator {
     }
 
     /**
-     * Calculates session-specific metrics.
+     * Calculates session-specific metrics based on fixed intervals.
+     * Les métriques sont maintenant calculées en utilisant l'intervalle fixe
+     * de 2 minutes entre chaque échantillon.
      *
      * @return object containing session aggregate stats
      */
@@ -187,15 +220,14 @@ public class PlayerMonitoringCoordinator {
             int sessionDeaths = latest.deaths() - first.deaths();
             double sessionKd = sessionDeaths > 0 ? (double) sessionKills / sessionDeaths : sessionKills;
 
-            // Calculate session KPM based on actual play time
-            long sessionSeconds = latest.secondsPlayed() - first.secondsPlayed();
-            double sessionKpm = sessionSeconds > 0
-                    ? (double) sessionKills / (sessionSeconds / 60.0)
+            // Calculate session KPM based on fixed interval time
+            // Basé sur le nombre de points moins 1 (car le premier point est à t=0)
+            double sessionMinutes = (history.size() - 1) * FETCH_INTERVAL_MINUTES;
+            double sessionKpm = sessionMinutes > 0
+                    ? (double) sessionKills / sessionMinutes
                     : 0;
 
-            // Pour le headshot rate, nous n'avons pas de compteur de headshots direct
-            // Nous utilisons pour l'instant le taux global, mais idéalement nous voudrions
-            // le calculer à partir du nombre de headshots de la session
+            // Pour le headshot rate, nous utilisons le taux global le plus récent
             String sessionHeadshots = latest.headshots();
 
             return new SessionMetrics(sessionKd, sessionKpm, sessionKills, sessionHeadshots);

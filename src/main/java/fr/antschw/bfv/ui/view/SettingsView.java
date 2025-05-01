@@ -2,6 +2,7 @@ package fr.antschw.bfv.ui.view;
 
 import com.google.inject.Inject;
 import fr.antschw.bfv.domain.service.HotkeyConfigurationService;
+import fr.antschw.bfv.domain.service.SettingsService;
 import fr.antschw.bfv.application.util.I18nUtils;
 import fr.antschw.bfv.application.orchestrator.PlayerMonitoringCoordinator;
 import javafx.geometry.Insets;
@@ -10,11 +11,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Rectangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +19,7 @@ import java.util.ResourceBundle;
 
 /**
  * JavaFX view for configuring the scan hotkey and player monitoring settings.
+ * Maintenant avec persistance des paramètres via SettingsService.
  */
 public class SettingsView {
     private static final Logger LOGGER = LoggerFactory.getLogger(SettingsView.class);
@@ -29,6 +27,7 @@ public class SettingsView {
     private final ResourceBundle bundle = I18nUtils.getBundle();
     private final HotkeyConfigurationService hotkeyConfigurationService;
     private final PlayerMonitoringCoordinator monitoringCoordinator;
+    private final SettingsService settingsService;
     private final StatsView statsView;
 
     // Hotkey section
@@ -49,9 +48,11 @@ public class SettingsView {
     public SettingsView(
             HotkeyConfigurationService hotkeyConfigurationService,
             PlayerMonitoringCoordinator monitoringCoordinator,
+            SettingsService settingsService,
             StatsView statsView) {
         this.hotkeyConfigurationService = hotkeyConfigurationService;
         this.monitoringCoordinator = monitoringCoordinator;
+        this.settingsService = settingsService;
         this.statsView = statsView;
         initLayout();
     }
@@ -90,16 +91,18 @@ public class SettingsView {
             Label playerTitle = new Label(bundle.getString("settings.stats"));
             playerTitle.getStyleClass().add("section-title");
 
-            // Initialize player name field
-            String currentPlayer = monitoringCoordinator.getMonitoredPlayer();
-            playerNameField.setText(currentPlayer);
+            // Initialize player name field with saved value
+            String savedPlayer = settingsService.getPlayerName();
+            boolean savedUsePlayerId = settingsService.isUsePlayerId();
+
+            playerNameField.setText(savedPlayer);
             playerNameField.setPromptText(bundle.getString("stats.settings.player_prompt"));
             playerNameField.getStyleClass().add("settings-field");
             playerNameField.setPrefWidth(200);
 
-            // Player ID switch (using custom styled checkbox instead of ToggleSwitch)
+            // Player ID switch with saved value
             usePlayerIdCheck.setText(bundle.getString("stats.settings.is_player_id"));
-            usePlayerIdCheck.setSelected(false); // Default to player name
+            usePlayerIdCheck.setSelected(savedUsePlayerId);
             usePlayerIdCheck.getStyleClass().add("switch-checkbox");
 
             // Save button
@@ -108,8 +111,8 @@ public class SettingsView {
 
             // Status label
             playerStatusLabel.getStyleClass().add("status-text");
-            if (!currentPlayer.isEmpty()) {
-                playerStatusLabel.setText(bundle.getString("stats.settings.currently_monitoring") + " " + currentPlayer);
+            if (!savedPlayer.isEmpty()) {
+                playerStatusLabel.setText(bundle.getString("stats.settings.currently_monitoring") + " " + savedPlayer);
                 playerStatusLabel.getStyleClass().add("success-text");
             }
 
@@ -204,6 +207,10 @@ public class SettingsView {
                 return;
             }
 
+            // Sauvegarder dans les paramètres (sera aussi fait par le coordinator)
+            settingsService.setPlayerName(playerIdentifier);
+            settingsService.setUsePlayerId(isPlayerId);
+
             // Start monitoring this player
             monitoringCoordinator.startMonitoring(playerIdentifier, isPlayerId, stats -> {
                 // This callback will run when stats are updated
@@ -232,64 +239,5 @@ public class SettingsView {
      */
     public VBox getView() {
         return view;
-    }
-
-    /**
-     * Creates a simple custom switch UI using standard JavaFX components.
-     * This is a simpler approach than the ToggleSwitch class.
-     */
-    private HBox createSwitch(String text, boolean initialState) {
-        HBox container = new HBox(8);
-        container.setAlignment(Pos.CENTER_LEFT);
-
-        // Background rectangle
-        Rectangle background = new Rectangle(40, 20);
-        background.setArcHeight(20);
-        background.setArcWidth(20);
-
-        // Thumb circle
-        Circle thumb = new Circle(10);
-        thumb.setFill(Color.WHITE);
-
-        // Initial state styling
-        updateSwitchStyle(background, thumb, initialState);
-
-        // Container for the switch visuals
-        StackPane switchNode = new StackPane();
-        switchNode.getChildren().addAll(background, thumb);
-
-        // Position the thumb based on state
-        thumb.setTranslateX(initialState ? 10 : -10);
-
-        // Label
-        Label label = new Label(text);
-
-        // Click handling
-        switchNode.setOnMouseClicked(e -> {
-            boolean newState = !isThumbActive(thumb);
-            thumb.setTranslateX(newState ? 10 : -10);
-            updateSwitchStyle(background, thumb, newState);
-        });
-
-        container.getChildren().addAll(switchNode, label);
-        return container;
-    }
-
-    /**
-     * Gets the state of the switch based on thumb position.
-     */
-    private boolean isThumbActive(Circle thumb) {
-        return thumb.getTranslateX() > 0;
-    }
-
-    /**
-     * Updates switch styling based on state.
-     */
-    private void updateSwitchStyle(Rectangle background, Circle thumb, boolean active) {
-        if (active) {
-            background.setFill(Color.valueOf("#4CAF50"));
-        } else {
-            background.setFill(Color.valueOf("#CCCCCC"));
-        }
     }
 }

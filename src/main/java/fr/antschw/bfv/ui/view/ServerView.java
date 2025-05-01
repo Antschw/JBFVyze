@@ -9,6 +9,7 @@ import fr.antschw.bfv.domain.model.HackersSummary;
 import fr.antschw.bfv.domain.service.HotkeyConfigurationService;
 import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.infrastructure.api.client.BfvHackersClient;
+import fr.antschw.bfv.ui.component.TimerComponent;
 import fr.antschw.bfv.ui.panel.PlayersPanel;
 import fr.antschw.bfv.ui.panel.ScanControlPanel;
 import fr.antschw.bfv.ui.panel.StatusPanel;
@@ -20,7 +21,6 @@ import javafx.scene.control.Separator;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -28,6 +28,7 @@ import java.util.ResourceBundle;
 /**
  * Orchestrates the scan flow by delegating to three panels:
  * ScanControlPanel, StatusPanel, and PlayersPanel.
+ * Maintenant avec un timer pour mesurer précisément le temps écoulé.
  */
 public class ServerView {
 
@@ -38,6 +39,7 @@ public class ServerView {
     private final ScanControlPanel controlPane;
     private final StatusPanel statusPane = new StatusPanel();
     private final PlayersPanel playersPane = new PlayersPanel();
+    private final TimerComponent scanTimer = new TimerComponent();
 
     @Inject
     public ServerView(ServerScanCoordinator scanService,
@@ -49,14 +51,18 @@ public class ServerView {
 
         controlPane = new ScanControlPanel(hotkeyConfig, this::runScan);
         root.setPadding(new Insets(AppConstants.WINDOW_PADDING));
-        
-        // Connecter le timer du panel de statut au panel des joueurs
-        playersPane.setTimeLabel(statusPane.getTimeLabel());
+
+        // Configurer le timer
+        scanTimer.getStyleClass().add("timer-component");
+
+        // Connecter le timer au panel des joueurs
+        playersPane.setTimeLabel(scanTimer);
+        statusPane.setTimeLabel(scanTimer);
 
         // Ajout des composants avec séparateur plus mince
         Separator separator = new Separator();
         separator.setPadding(new Insets(0, 0, 2, 0)); // Réduire l'espace vertical
-        
+
         root.getChildren().addAll(controlPane, statusPane, separator, playersPane);
 
         // Le PlayersPanel doit être le seul à s'étendre
@@ -76,7 +82,9 @@ public class ServerView {
         statusPane.reset();
         playersPane.startLoading();
 
-        Instant start = Instant.now();
+        // Démarrer le timer
+        scanTimer.reset();
+        scanTimer.start();
 
         new Thread(() -> {
             try {
@@ -96,10 +104,10 @@ public class ServerView {
 
                 // 3) Hackers
                 var hackInfo = scanService.queryBfvHackers(String.valueOf(info.longServerId()), info);
-                
+
                 // Récupérer le résumé complet des hackers depuis le client
                 HackersSummary summary = BfvHackersClient.getLatestSummary();
-                
+
                 Platform.runLater(() -> {
                     if (summary != null) {
                         // Utiliser la nouvelle méthode avec le résumé complet
@@ -108,12 +116,12 @@ public class ServerView {
                         // Fallback: créer un résumé simplifié
                         statusPane.setHackersStatus(
                                 new HackersSummary(
-                                    0, // total inconnu
-                                    0, // legit inconnu
-                                    0, // sus inconnu
-                                    0, // very sus inconnu
-                                    hackInfo.cheaterCount(), // nombre de hackers
-                                    0  // âge inconnu
+                                        0, // total inconnu
+                                        0, // legit inconnu
+                                        0, // sus inconnu
+                                        0, // very sus inconnu
+                                        hackInfo.cheaterCount(), // nombre de hackers
+                                        0  // âge inconnu
                                 ),
                                 false
                         );
@@ -123,8 +131,8 @@ public class ServerView {
                 // 4) Players async
                 scanService.queryPlayersAsync(
                         shortId,
-                        player -> Platform.runLater(() -> 
-                            playersPane.addPlayer(player.name(), player.playerId())
+                        player -> Platform.runLater(() ->
+                                playersPane.addPlayer(player.name(), player.playerId())
                         ),
                         (player, stats) -> Platform.runLater(() -> {
                             // Get the list of metrics that flagged this player
@@ -143,9 +151,12 @@ public class ServerView {
                         })
                 );
 
-                Duration d = Duration.between(start, Instant.now());
-                String time = String.format("%dm %02ds", d.toMinutes(), d.minusMinutes(d.toMinutes()).getSeconds());
-                Platform.runLater(() -> statusPane.setTime(time));
+                // Arrêter le timer à la fin du scan
+                Platform.runLater(() -> {
+                    scanTimer.stop();
+                    playersPane.finishLoading();
+                    controlPane.setScanning(false);
+                });
 
             } catch (Exception ex) {
                 Platform.runLater(() -> {
@@ -155,9 +166,7 @@ public class ServerView {
                             new HackersSummary(0, 0, 0, 0, 0, 0),
                             false
                     );
-                });
-            } finally {
-                Platform.runLater(() -> {
+                    scanTimer.stop();
                     playersPane.finishLoading();
                     controlPane.setScanning(false);
                 });

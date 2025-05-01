@@ -1,0 +1,102 @@
+/* ===========================================
+   FENÊTRE PRINCIPALE ET BARRE DE TITRE
+   =========================================== */
+
+/* Barre de titre */
+.title-bar {
+    -fx-background-color: -color-accent-5;
+    -fx-padding: 6px 10px;
+    -fx-spacing: 8px;
+    -fx-alignment: center-left;
+}
+
+/* Label du titre */
+.title-label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+/* Boutons de la fenêtre */
+.window-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 4px;
+    -fx-padding: 5px;
+    -fx-cursor: hand;
+    -fx-min-width: 30px;
+    -fx-min-height: 25px;
+    -fx-content-display: graphic-only;
+}
+
+.window-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+.window-button:pressed {
+    -fx-background-color: rgba(255, 255, 255, 0.3);
+}
+
+.window-button .ikonli-font-icon {
+    -fx-icon-color: white;
+}
+
+/* Bouton de fermeture - style spécial au survol */
+.window-button:last-child:hover {
+    -fx-background-color: #e81123;
+}
+
+.window-button:last-child:pressed {
+    -fx-background-color: #f1707a;
+}
+
+/* ===========================================
+   NAVIGATION
+   =========================================== */
+
+/* Boutons de navigation */
+.nav-button {
+    -fx-background-color: -color-bg-subtle;
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-border-color: -color-border-subtle;
+    -fx-padding: 8px 15px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.nav-button:hover {
+    -fx-background-color: -color-bg-inset;
+}
+
+.nav-button:pressed {
+    -fx-background-color: -color-accent-subtle;
+    -fx-border-color: -color-accent-muted;
+    -fx-text-fill: -color-accent-fg;
+}
+
+/* Etat actif des boutons de navigation */
+.nav-button.active {
+    -fx-background-color: -color-accent-subtle;
+    -fx-border-color: -color-accent-muted;
+    -fx-text-fill: -color-accent-fg;
+}
+
+/* ===========================================
+   FENÊTRE PRINCIPALE ET BARRE DE TITRE
+   =========================================== */
+
+/* Conteneur principal de la fenêtre */
+.window-root {
+    -fx-background-color: -color-bg-default;
+    -fx-border-color: -color-border-default;
+    -fx-border-width: 1px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 10, 0, 0, 0);
+}
+
+/* Barre de titre */
+.title-bar {
+    -fx-background-color: -color-accent-5;
+    -fx-padding: 6px 10px;
+    -fx-spacing: 8px;
+    -fx-alignment: center-left;
+}

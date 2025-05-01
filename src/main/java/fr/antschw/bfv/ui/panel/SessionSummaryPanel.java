@@ -3,6 +3,7 @@ package fr.antschw.bfv.ui.panel;
 import fr.antschw.bfv.application.orchestrator.PlayerMonitoringCoordinator;
 import fr.antschw.bfv.domain.model.UserStats;
 import fr.antschw.bfv.application.util.I18nUtils;
+import fr.antschw.bfv.ui.component.TimerComponent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -13,17 +14,18 @@ import org.kordamp.ikonli.javafx.FontIcon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.ResourceBundle;
 
 /**
  * Panel displaying summary statistics for the current session.
- * Adapted to use horizontal layout to save vertical space.
+ * Adapted to use TimerComponent and calculate session metrics using fixed intervals.
  */
 public class SessionSummaryPanel extends VBox {
     private static final Logger LOGGER = LoggerFactory.getLogger(SessionSummaryPanel.class);
     private final ResourceBundle bundle = I18nUtils.getBundle();
 
-    private final Label sessionDurationLabel = new Label("--");
+    private final TimerComponent sessionTimer = new TimerComponent();
     private final Label sessionKdLabel = new Label("--");
     private final Label sessionKdTrendIcon = createTrendIcon();
     private final Label sessionKpmLabel = new Label("--");
@@ -56,14 +58,11 @@ public class SessionSummaryPanel extends VBox {
             Label headerLabel = new Label(bundle.getString("stats.session.title"));
             headerLabel.getStyleClass().add("header-label");
 
-            // Timer stylisé comme dans ServerView
-            sessionDurationLabel.getStyleClass().addAll("time-display");
-
             // Ajouter un spacer qui pousse le timer à droite
             javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
             javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-            headerBox.getChildren().addAll(headerLabel, spacer, sessionDurationLabel);
+            headerBox.getChildren().addAll(headerLabel, spacer, sessionTimer);
 
             // Configuration du FlowPane
             statsContainer.setHgap(15);
@@ -71,7 +70,7 @@ public class SessionSummaryPanel extends VBox {
             statsContainer.setPrefWrapLength(600);
             statsContainer.setPadding(new Insets(5, 0, 5, 0));
 
-            // Ajouter chaque stat box horizontalement - changé "accuracy" en "headshots"
+            // Ajouter chaque stat box horizontalement
             statsContainer.getChildren().addAll(
                     createStatBox("stats.session.kills", sessionKillsLabel, null),
                     createStatBox("stats.session.kd", sessionKdLabel, sessionKdTrendIcon),
@@ -134,16 +133,17 @@ public class SessionSummaryPanel extends VBox {
     }
 
     /**
-     * Sets the session duration display.
+     * Sets the session start time and starts the timer.
      */
-    public void setSessionDuration(String duration) {
+    public void setSessionStartTime(Instant startTime) {
         try {
-            if (duration == null) {
-                duration = "--";
+            if (startTime != null) {
+                sessionTimer.start(startTime);
+            } else {
+                sessionTimer.reset();
             }
-            sessionDurationLabel.setText(duration);
         } catch (Exception e) {
-            LOGGER.debug("Error setting session duration", e);
+            LOGGER.error("Error setting session start time", e);
         }
     }
 
@@ -195,7 +195,7 @@ public class SessionSummaryPanel extends VBox {
             // Update labels with session metrics
             sessionKdLabel.setText(String.format("%.2f", metrics.killDeath()));
             sessionKpmLabel.setText(String.format("%.2f", metrics.killsPerMinute()));
-            sessionHeadshotsLabel.setText(metrics.headshots()); // Maintenant c'est le taux de HS de session
+            sessionHeadshotsLabel.setText(metrics.headshots());
             sessionKillsLabel.setText(String.valueOf(metrics.kills()));
 
             // Update trend icons if we have initial stats to compare against
@@ -246,5 +246,12 @@ public class SessionSummaryPanel extends VBox {
                 // If even the fallback fails, do nothing
             }
         }
+    }
+
+    /**
+     * Retourne le composant timer pour l'utiliser dans d'autres vues si nécessaire.
+     */
+    public TimerComponent getSessionTimer() {
+        return sessionTimer;
     }
 }
