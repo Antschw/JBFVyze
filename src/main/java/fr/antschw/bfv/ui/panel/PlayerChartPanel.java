@@ -2,6 +2,7 @@ package fr.antschw.bfv.ui.panel;
 
 import fr.antschw.bfv.domain.model.SessionStats;
 import fr.antschw.bfv.application.util.I18nUtils;
+import fr.antschw.bfv.domain.model.UserStats;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
@@ -17,8 +18,8 @@ import javafx.scene.shape.Circle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import java.util.ResourceBundle;
 /**
  * Panel displaying charts of player statistics evolution during the session.
  * Avec légende cliquable et redimensionnement automatique du graphique.
+ * Modifié pour calculer les statistiques de session basées sur le différentiel avec stats initiales.
  */
 public class PlayerChartPanel extends VBox {
     private static final Logger LOGGER = LoggerFactory.getLogger(PlayerChartPanel.class);
@@ -49,6 +51,7 @@ public class PlayerChartPanel extends VBox {
     private final Map<XYChart.Series<Number, Number>, Boolean> seriesVisibility = new HashMap<>();
 
     private Instant sessionStartTime;
+    private UserStats initialStats; // Ajout des stats initiales
 
     // Couleurs personnalisées pour les séries
     private static final String KD_COLOR = "#4CAF50";  // Vert
@@ -59,10 +62,10 @@ public class PlayerChartPanel extends VBox {
     private int currentPointCount = 0;
 
     // Intervalle de fetch en minutes (pour le calcul de l'axe X)
-    private static final int FETCH_INTERVAL_MINUTES = 2;
+    private static final int FETCH_INTERVAL_MINUTES = 12; // Modifié à 12 minutes
 
     // Taille initiale de la vue en minutes
-    private static final int INITIAL_VIEW_MINUTES = 10;
+    private static final int INITIAL_VIEW_MINUTES = 36; // Modifié pour 3 points à 12 minutes
 
     public PlayerChartPanel() {
         LOGGER.info("Initializing PlayerChartPanel");
@@ -76,7 +79,7 @@ public class PlayerChartPanel extends VBox {
             headerLabel.getStyleClass().add("header-label");
 
             // Set up the chart with fixed initial scale
-            NumberAxis xAxis = new NumberAxis(0, INITIAL_VIEW_MINUTES, 2);
+            NumberAxis xAxis = new NumberAxis(0, INITIAL_VIEW_MINUTES, 12); // Modifié pour échelle de 12 minutes
             xAxis.setLabel(bundle.getString("stats.chart.x_axis"));
             xAxis.setTickLabelRotation(0);
             xAxis.setAnimated(false);
@@ -207,6 +210,13 @@ public class PlayerChartPanel extends VBox {
     }
 
     /**
+     * Définit les statistiques initiales (de début de session).
+     */
+    public void setInitialStats(UserStats stats) {
+        this.initialStats = stats;
+    }
+
+    /**
      * Formats a headshot percentage string (e.g., "20.5%") as a double.
      */
     private double parsePercentage(String percentage) {
@@ -221,11 +231,12 @@ public class PlayerChartPanel extends VBox {
 
     /**
      * Updates the chart with session history data.
-     * Utilise l'intervalle fixe de 2 minutes entre chaque échantillon.
+     * Modifié pour calculer les métriques de session basées sur les stats initiales.
      */
     public void updateChart(List<SessionStats> history) {
         try {
-            if (chart == null || history == null || history.isEmpty() || sessionStartTime == null) {
+            if (chart == null || history == null || history.isEmpty() || sessionStartTime == null || initialStats == null) {
+                LOGGER.debug("Cannot update chart - missing session data");
                 return;
             }
 
@@ -243,52 +254,31 @@ public class PlayerChartPanel extends VBox {
             kpmSeries.getData().clear();
             hsPercentSeries.getData().clear();
 
-            // Add data points - maintenant basés uniquement sur l'intervalle fixe de session
-            if (history.size() >= 2) {
-                SessionStats first = history.get(0);
+            // Ajouter les données en utilisant les formules pour les calculs de session
+            for (int i = 0; i < history.size(); i++) {
+                SessionStats stats = history.get(i);
 
-                for (int i = 0; i < history.size(); i++) {
-                    SessionStats stats = history.get(i);
+                // Position en X basée sur l'intervalle fixe entre les échantillons
+                double minutesSinceStart = i * FETCH_INTERVAL_MINUTES;
 
-                    // Position en X basée sur l'intervalle fixe entre les échantillons
-                    double minutesSinceStart = i * FETCH_INTERVAL_MINUTES;
+                // Calculer le K/D de session (absolue de la différence pour éviter les valeurs négatives)
+                int sessionKills = Math.abs(stats.kills() - initialStats.kills());
+                int sessionDeaths = Math.abs(stats.deaths() - initialStats.deaths());
+                double sessionKd = sessionDeaths > 0 ? (double) sessionKills / sessionDeaths : sessionKills;
 
-                    if (i > 0) {
-                        SessionStats previous = history.get(i-1);
+                // Calculer le KPM basé sur le temps réel écoulé
+                Duration timeSinceStart = Duration.between(sessionStartTime, stats.timestamp());
+                double minutesElapsed = timeSinceStart.toSeconds() / 60.0;
+                double sessionKpm = minutesElapsed > 0 ? (double) sessionKills / minutesElapsed : 0;
 
-                        // Calculer les deltas entre les échantillons
-                        int deltaKills = stats.kills() - previous.kills();
-                        int deltaDeaths = stats.deaths() - previous.deaths();
+                // Calculer le % de headshots
+                // Note: comme nous n'avons pas directement le nombre de headshots, on utilise le % global
+                double headshots = parsePercentage(stats.headshots());
 
-                        // K/D pour l'intervalle actuel
-                        double intervalKD = deltaDeaths > 0 ? (double) deltaKills / deltaDeaths :
-                                (deltaKills > 0 ? deltaKills : stats.killDeath());
-
-                        // KPM pour l'intervalle actuel (basé sur l'intervalle fixe)
-                        double intervalKPM = (double) deltaKills / FETCH_INTERVAL_MINUTES;
-
-                        // Headshot rate (on garde celui global pour le moment)
-                        double headshots = parsePercentage(stats.headshots());
-
-                        // Ajouter les points
-                        kdSeries.getData().add(new XYChart.Data<>(minutesSinceStart, intervalKD));
-                        kpmSeries.getData().add(new XYChart.Data<>(minutesSinceStart, intervalKPM));
-                        hsPercentSeries.getData().add(new XYChart.Data<>(minutesSinceStart, headshots));
-                    } else {
-                        // Pour le premier point, on utilise les stats globales comme point de référence
-                        kdSeries.getData().add(new XYChart.Data<>(minutesSinceStart, stats.killDeath()));
-                        kpmSeries.getData().add(new XYChart.Data<>(minutesSinceStart, stats.killsPerMinute()));
-                        hsPercentSeries.getData().add(new XYChart.Data<>(minutesSinceStart, parsePercentage(stats.headshots())));
-                    }
-                }
-            } else {
-                // S'il n'y a qu'un seul point, on montre les stats globales à 0 minutes
-                SessionStats stats = history.get(0);
-                double minutesSinceStart = 0;
-
-                kdSeries.getData().add(new XYChart.Data<>(minutesSinceStart, stats.killDeath()));
-                kpmSeries.getData().add(new XYChart.Data<>(minutesSinceStart, stats.killsPerMinute()));
-                hsPercentSeries.getData().add(new XYChart.Data<>(minutesSinceStart, parsePercentage(stats.headshots())));
+                // Ajouter les points au graphique
+                kdSeries.getData().add(new XYChart.Data<>(minutesSinceStart, sessionKd));
+                kpmSeries.getData().add(new XYChart.Data<>(minutesSinceStart, sessionKpm));
+                hsPercentSeries.getData().add(new XYChart.Data<>(minutesSinceStart, headshots));
             }
 
             // Adapter l'axe des X en fonction de la durée de session
@@ -306,7 +296,7 @@ public class PlayerChartPanel extends VBox {
 
     /**
      * Adjusts the X-axis range based on the number of data points.
-     * Initially shows 10 minutes, then expands as needed.
+     * Initially shows 36 minutes (3 points at 12min each), then expands as needed.
      */
     private void adjustXAxisRange(int dataPointCount) {
         if (chart == null) return;
@@ -316,7 +306,7 @@ public class PlayerChartPanel extends VBox {
         // Calculate minutes represented by all data points
         double totalMinutes = (dataPointCount - 1) * FETCH_INTERVAL_MINUTES;
 
-        // Keep initial view of 10 minutes until we exceed that
+        // Keep initial view of 36 minutes until we exceed that
         if (totalMinutes <= INITIAL_VIEW_MINUTES) {
             xAxis.setUpperBound(INITIAL_VIEW_MINUTES);
         } else {
