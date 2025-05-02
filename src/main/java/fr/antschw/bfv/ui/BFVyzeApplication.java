@@ -12,9 +12,10 @@ import fr.antschw.bfvocr.api.BFVOcrFactory;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,41 +31,54 @@ public class BFVyzeApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        // DI setup
-        injector = Guice.createInjector(
-                new AppModule()
-        );
-
-        // Appliquer le thème
-        Application.setUserAgentStylesheet(new atlantafx.base.theme.PrimerLight().getUserAgentStylesheet());
-
-        // Initialiser le contrôleur de thème
-        ThemeController.initialize();
-
-        // Initialiser le contrôleur principal
-        MainController mainController = injector.getInstance(MainController.class);
-
-        // Configurer la scène
-        Scene scene = new Scene(mainController.getRoot(), AppConstants.WINDOW_WIDTH, AppConstants.WINDOW_HEIGHT);
-
-        // Charger les feuilles de style
         try {
-            if (getClass().getResource("/styles/style.css") != null) {
-                scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles/style.css")).toExternalForm());
-            } else {
-                LOGGER.warn("Warning: Main stylesheet not found!");
-            }
-        } catch (Exception e) {
-            LOGGER.error("Failed to load stylesheets", e);
-        }
+            // DI setup
+            injector = Guice.createInjector(
+                    new AppModule()
+            );
 
-        // Configuration finale de la fenêtre
-        primaryStage.setTitle("BFVyze");
-        primaryStage.initStyle(StageStyle.DECORATED);
-        primaryStage.setMinWidth(500);
-        primaryStage.setMinHeight(400);
-        primaryStage.setScene(scene);
-        primaryStage.show();
+            // Appliquer le thème
+            Application.setUserAgentStylesheet(new atlantafx.base.theme.PrimerLight().getUserAgentStylesheet());
+
+            // Initialiser le contrôleur de thème
+            ThemeController.initialize();
+
+            // Initialiser le contrôleur principal
+            MainController mainController = injector.getInstance(MainController.class);
+
+            // Configurer la scène
+            Scene scene = new Scene(mainController.getRoot(), AppConstants.WINDOW_WIDTH, AppConstants.WINDOW_HEIGHT);
+
+            // Charger les feuilles de style
+            try {
+                if (getClass().getResource("/styles/style.css") != null) {
+                    scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/styles/style.css")).toExternalForm());
+                } else {
+                    LOGGER.warn("Warning: Main stylesheet not found!");
+                }
+            } catch (Exception e) {
+                LOGGER.error("Failed to load stylesheets", e);
+            }
+
+            // Configuration finale de la fenêtre
+            primaryStage.setTitle("BFVyze");
+            primaryStage.setMinWidth(500);
+            primaryStage.setMinHeight(400);
+            primaryStage.setScene(scene);
+
+            // Configurer une fenêtre avec un listener pour quand elle devient visible
+            primaryStage.setOnShown(event -> {
+                // Maintenant que la fenêtre est affichée, nous pouvons enregistrer le stage pour le thème
+                ThemeController.setMainStage(primaryStage);
+            });
+
+            // Afficher la fenêtre
+            primaryStage.show();
+
+            LOGGER.info("Application started successfully");
+        } catch (Exception e) {
+            LOGGER.error("Error starting application", e);
+        }
     }
 
     @Override
@@ -108,6 +122,10 @@ public class BFVyzeApplication extends Application {
     }
 
     public static void main(String[] args) {
-        launch(args);
+        try {
+            launch(args);
+        } catch (Exception e) {
+            LOGGER.error("Erreur fatale lors du lancement de l'application", e);
+        }
     }
 }

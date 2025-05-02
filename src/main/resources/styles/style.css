@@ -613,10 +613,13 @@
    GESTION DU THÈME (CUSTOMISATION)
    =========================================== */
 
-/* Style de la fenêtre elle-même (pas le root) */
 .root {
-    -fx-background-color: -color-bg-default;
-    -fx-border-width: 0px; /* Pas de bordure supplémentaire */
+    -fx-background-color: #282a36; /* Couleur Dracula pour le mode sombre */
+}
+
+.title-bar {
+    -fx-background-color: #282a36;
+    -fx-text-fill: #f8f8f2;
 }
 
 /* Bouton bascule de thème */
