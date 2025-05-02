@@ -40,15 +40,6 @@
     -fx-icon-color: white;
 }
 
-/* Bouton de fermeture - style spécial au survol */
-.window-button:last-child:hover {
-    -fx-background-color: #e81123;
-}
-
-.window-button:last-child:pressed {
-    -fx-background-color: #f1707a;
-}
-
 /* ===========================================
    NAVIGATION
    =========================================== */

@@ -101,7 +101,7 @@
     -fx-background-radius: 4px;
     -fx-background-color: -color-bg-subtle;
     -fx-padding: 3px 10px;
-    -fx-font-weight: medium;
+    -fx-font-weight: normal;
     -fx-min-width: 40px;
     -fx-max-width: 80px;
     -fx-alignment: baseline-left;
@@ -113,7 +113,7 @@
     -fx-padding: 2px 5px;
     -fx-background-color: -color-bg-subtle;
     -fx-background-radius: 3px;
-    -fx-font-weight: medium;
+    -fx-font-weight: normal;
     -fx-min-width: 60px;
 }
 
@@ -143,13 +143,6 @@
 
 .status-legit {
     -fx-text-fill: -color-success-5;
-}
-
-/* Pulsation pour les valeurs non-nulles */
-.status-hackers:not([text="0"]),
-.status-verysus:not([text="0"]),
-.status-sus:not([text="0"]) {
-    -fx-animation: pulse 2s infinite;
 }
 
 /* Styles pour la compatibilité avec l'ancien système */
