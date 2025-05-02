@@ -18,12 +18,12 @@ import java.util.function.Consumer;
 
 /**
  * Coordinates monitoring a player's statistics over time.
- * Maintenant avec support pour la persistance des paramètres.
+ * Maintenant avec support pour la persistance des paramètres et calcul amélioré des métriques de session.
  */
 public class PlayerMonitoringCoordinator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PlayerMonitoringCoordinator.class);
-    private static final int FETCH_INTERVAL_MINUTES = 2; // Intervalle fixe de 2 minutes
+    private static final int FETCH_INTERVAL_MINUTES = 12; // Intervalle fixe de 12 minutes
 
     private final PlayerMonitoringService monitoringService;
     private final SettingsService settingsService;
@@ -118,6 +118,20 @@ public class PlayerMonitoringCoordinator {
     }
 
     /**
+     * Récupère les statistiques initiales (début de la session) du joueur surveillé.
+     *
+     * @return les statistiques initiales ou null si pas de surveillance
+     */
+    public UserStats getInitialStats() {
+        try {
+            return monitoringService.getInitialStats().orElse(null);
+        } catch (Exception e) {
+            LOGGER.error("Error getting initial stats", e);
+            return null;
+        }
+    }
+
+    /**
      * Returns the player identifier (name or ID) being monitored.
      *
      * @return the player identifier or empty string if none
@@ -197,37 +211,40 @@ public class PlayerMonitoringCoordinator {
     }
 
     /**
-     * Calculates session-specific metrics based on fixed intervals.
-     * Les métriques sont maintenant calculées en utilisant l'intervalle fixe
-     * de 2 minutes entre chaque échantillon.
+     * Calcule les métriques spécifiques à la session actuelle.
+     * Modifié pour utiliser les statistiques du début de session pour un calcul plus précis.
      *
-     * @return object containing session aggregate stats
+     * @return objet contenant les statistiques agrégées de la session
      */
     public SessionMetrics calculateSessionMetrics() {
         try {
-            List<SessionStats> history = getSessionHistory();
-            if (history.isEmpty()) {
+            UserStats initial = getInitialStats();
+            UserStats latest = getCurrentStats();
+
+            if (initial == null || latest == null) {
                 return new SessionMetrics(0, 0, 0, "0%");
             }
 
-            // First snapshot in session
-            SessionStats first = history.get(0);
-            // Latest snapshot
-            SessionStats latest = history.get(history.size() - 1);
+            // Calculer les kills et morts de la session
+            int sessionKills = Math.abs(latest.kills() - initial.kills());
+            int sessionDeaths = Math.abs(latest.deaths() - initial.deaths());
 
-            // Calculate session-specific metrics
-            int sessionKills = latest.kills() - first.kills();
-            int sessionDeaths = latest.deaths() - first.deaths();
+            // K/D de la session = kills de session / deaths de session
             double sessionKd = sessionDeaths > 0 ? (double) sessionKills / sessionDeaths : sessionKills;
 
-            // Calculate session KPM based on fixed interval time
-            // Basé sur le nombre de points moins 1 (car le premier point est à t=0)
-            double sessionMinutes = (history.size() - 1) * FETCH_INTERVAL_MINUTES;
-            double sessionKpm = sessionMinutes > 0
-                    ? (double) sessionKills / sessionMinutes
-                    : 0;
+            // Calculer le temps écoulé depuis le début de la session en minutes
+            Instant startTime = getSessionStartTime();
+            double sessionMinutes = 0;
+            if (startTime != null) {
+                sessionMinutes = Duration.between(startTime, Instant.now()).toSeconds() / 60.0;
+            }
 
-            // Pour le headshot rate, nous utilisons le taux global le plus récent
+            // Kills par minute = kills de session / minutes de session
+            double sessionKpm = sessionMinutes > 0 ? (double) sessionKills / sessionMinutes : 0;
+
+            // Pour le headshot rate, nous aurions besoin du nombre de headshots
+            // mais cette donnée n'est pas disponible dans le modèle actuel
+            // Alors nous utilisons le taux global le plus récent
             String sessionHeadshots = latest.headshots();
 
             return new SessionMetrics(sessionKd, sessionKpm, sessionKills, sessionHeadshots);

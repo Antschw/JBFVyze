@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * View responsible for displaying player statistics and session monitoring.
  * Settings for player monitoring are now in SettingsView.
- * Amélioré avec mise à jour automatique toutes les 2 minutes.
+ * Modifié avec mise à jour automatique toutes les 12 minutes.
  */
 public class StatsView {
     private static final Logger LOGGER = LoggerFactory.getLogger(StatsView.class);
@@ -40,8 +40,8 @@ public class StatsView {
     private final PlayerChartPanel chartPanel;
     private final SessionSummaryPanel summaryPanel;
 
-    // Intervalle de mise à jour fixe de 2 minutes
-    private static final int FETCH_INTERVAL_MINUTES = 2;
+    // Intervalle de mise à jour fixe de 12 minutes
+    private static final int FETCH_INTERVAL_MINUTES = 12;
 
     // Utilisation d'un scheduler unique pour toutes les mises à jour
     private ScheduledExecutorService uiUpdater;
@@ -131,7 +131,7 @@ public class StatsView {
 
     /**
      * Starts the UI update scheduler.
-     * Maintenant configuré pour rafraîchir les données toutes les 2 minutes exactement.
+     * Maintenant configuré pour rafraîchir les données toutes les 12 minutes exactement.
      */
     private void startUiUpdates() {
         try {
@@ -148,13 +148,13 @@ public class StatsView {
                 return t;
             });
 
-            // Mise à jour complète des stats toutes les 2 minutes
+            // Mise à jour complète des stats toutes les 12 minutes
             uiUpdater.scheduleAtFixedRate(
                     () -> Platform.runLater(this::refreshView),
                     0, FETCH_INTERVAL_MINUTES, TimeUnit.MINUTES
             );
 
-            LOGGER.info("UI updater started successfully");
+            LOGGER.info("UI updater started successfully with {} minute interval", FETCH_INTERVAL_MINUTES);
         } catch (Exception e) {
             LOGGER.error("Error starting UI updater", e);
         }
@@ -173,6 +173,7 @@ public class StatsView {
 
             // Get the latest data
             UserStats currentStats = monitoringCoordinator.getCurrentStats();
+            UserStats initialStats = monitoringCoordinator.getInitialStats();
 
             // Skip if no data
             if (currentStats == null) {
@@ -189,10 +190,18 @@ public class StatsView {
                 Instant startTime = monitoringCoordinator.getSessionStartTime();
                 summaryPanel.setSessionStartTime(startTime);
 
+                // Update initial stats for trend icons
+                if (initialStats != null) {
+                    summaryPanel.setInitialStats(initialStats);
+
+                    // Mettre à jour aussi les stats initiales dans le chart panel
+                    chartPanel.setInitialStats(initialStats);
+                }
+
                 // Get session history
                 List<SessionStats> history = monitoringCoordinator.getSessionHistory();
 
-                // Update chart avec historique toujours mis à jour
+                // Update chart avec l'historique mis à jour
                 if (!history.isEmpty()) {
                     chartPanel.setSessionStartTime(startTime);
                     chartPanel.updateChart(history);
@@ -218,8 +227,14 @@ public class StatsView {
 
             // Update initial stats for trend calculation
             UserStats currentStats = monitoringCoordinator.getCurrentStats();
+            UserStats initialStats = monitoringCoordinator.getInitialStats();
+
+            if (initialStats != null) {
+                chartPanel.setInitialStats(initialStats);
+                summaryPanel.setInitialStats(initialStats);
+            }
+
             if (currentStats != null) {
-                summaryPanel.setInitialStats(currentStats);
                 lastDisplayedStats = currentStats;
             }
 

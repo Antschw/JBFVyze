@@ -19,7 +19,7 @@ import java.util.ResourceBundle;
 
 /**
  * Panel displaying summary statistics for the current session.
- * Adapted to use TimerComponent and calculate session metrics using fixed intervals.
+ * Affiche les métriques basées sur la différence entre stats actuelles et stats initiales.
  */
 public class SessionSummaryPanel extends VBox {
     private static final Logger LOGGER = LoggerFactory.getLogger(SessionSummaryPanel.class);
@@ -185,6 +185,7 @@ public class SessionSummaryPanel extends VBox {
 
     /**
      * Updates the panel with session metrics.
+     * Les métriques de session sont maintenant basées sur la différence depuis le début.
      */
     public void updateSessionMetrics(PlayerMonitoringCoordinator.SessionMetrics metrics) {
         try {

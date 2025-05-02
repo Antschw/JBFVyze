@@ -35,6 +35,13 @@ public interface PlayerMonitoringService {
     Optional<UserStats> getCurrentStats();
 
     /**
+     * Gets the player's initial stats from when the monitoring started.
+     *
+     * @return the monitored player's initial stats or empty if none
+     */
+    Optional<UserStats> getInitialStats();
+
+    /**
      * Gets all session stats recorded since monitoring started.
      *
      * @return list of session stats snapshots
