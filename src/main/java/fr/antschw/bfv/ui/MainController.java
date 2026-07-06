@@ -2,6 +2,8 @@ package fr.antschw.bfv.ui;
 
 import fr.antschw.bfv.application.util.I18nUtils;
 import fr.antschw.bfv.application.util.AppConstants;
+import fr.antschw.bfv.infrastructure.window.TitleBarMetrics;
+import fr.antschw.bfv.ui.control.NativeTitleBar;
 import fr.antschw.bfv.ui.control.ThemeToggleButton;
 import fr.antschw.bfv.ui.view.ServerView;
 import fr.antschw.bfv.ui.view.SettingsView;
@@ -33,6 +35,7 @@ public class MainController {
     private final ServerView serverView;
     private final StatsView statsView;
     private final SettingsView settingsView;
+    private final NativeTitleBar titleBar;
 
     /**
      * Constructs the main controller with injected views.
@@ -40,18 +43,24 @@ public class MainController {
      * @param serverView   injected ServerView
      * @param statsView    injected StatsView
      * @param settingsView injected SettingsView
+     * @param titleBarMetrics registre des zones partagé avec la décoration native
      */
     @Inject
-    public MainController(ServerView serverView, StatsView statsView, SettingsView settingsView) {
+    public MainController(ServerView serverView, StatsView statsView, SettingsView settingsView,
+                          TitleBarMetrics titleBarMetrics) {
         this.serverView = serverView;
         this.statsView = statsView;
         this.settingsView = settingsView;
 
-        HBox navBar = createNavigationBar();
-        Separator separator = createSeparator();
+        // La navigation et le toggle de thème vivent dans la barre de titre
+        // custom (style IntelliJ) ; ils sont déclarés zones interactives pour
+        // rester cliquables malgré le drag natif HTCAPTION.
+        ThemeToggleButton themeButton = new ThemeToggleButton();
+        themeButton.getStyleClass().add("theme-button");
+        this.titleBar = new NativeTitleBar(titleBarMetrics, createNavigationBar(), themeButton);
 
-        VBox container = new VBox(navBar, separator);
-        container.setSpacing(10);
+        Separator separator = createSeparator();
+        VBox container = new VBox(titleBar, separator);
 
         root.setTop(container);
         setView(serverView.getView(), bundle.getString("server.button")); // Initial view
@@ -66,23 +75,9 @@ public class MainController {
         statsButton.getStyleClass().add("nav-button");
         settingsButton.getStyleClass().add("nav-button");
 
-        // Bouton de bascule de thème
-        ThemeToggleButton themeButton = new ThemeToggleButton();
-        themeButton.getStyleClass().add("theme-button");
-
-        // Créer un conteneur flexible pour centrer les boutons de navigation
-        // et placer le bouton de thème à droite
         HBox centerButtons = new HBox(AppConstants.NAVBAR_SPACING, serverButton, statsButton, settingsButton);
         centerButtons.setAlignment(Pos.CENTER);
-
-        // Spacer pour pousser le bouton de thème à droite
-        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
-        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
-
-        HBox navBar = new HBox(10, centerButtons, spacer, themeButton);
-        navBar.setAlignment(Pos.CENTER_LEFT);
-        navBar.setPadding(new Insets(10, 10, 0, 10));
-        return navBar;
+        return centerButtons;
     }
 
     private Separator createSeparator() {
@@ -128,5 +123,12 @@ public class MainController {
 
     public BorderPane getRoot() {
         return root;
+    }
+
+    /**
+     * Barre de titre custom, à lier au Stage par l'application.
+     */
+    public NativeTitleBar getTitleBar() {
+        return titleBar;
     }
 }

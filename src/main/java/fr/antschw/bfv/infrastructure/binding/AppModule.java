@@ -22,6 +22,7 @@ import fr.antschw.bfv.infrastructure.hotkey.HotkeyListenerAdapter;
 import fr.antschw.bfv.infrastructure.monitoring.PlayerMonitoringAdapter;
 import fr.antschw.bfv.infrastructure.screenshot.ScreenshotAdapter;
 import fr.antschw.bfv.infrastructure.settings.SettingsServiceImpl;
+import fr.antschw.bfv.infrastructure.window.TitleBarMetrics;
 import fr.antschw.bfv.ui.MainController;
 import fr.antschw.bfv.ui.component.TimerComponent;
 import fr.antschw.bfv.ui.view.ServerView;
@@ -102,6 +103,10 @@ public class AppModule extends AbstractModule {
 
             // Composants UI personnalisés (nouveaux)
             bind(TimerComponent.class);
+
+            // Registre partagé entre la barre de titre JavaFX et la
+            // décoration native Windows (doit être le même objet des deux côtés)
+            bind(TitleBarMetrics.class).in(Singleton.class);
 
             bind(BFVOcrService.class).toInstance(BFVOcrFactory.createDefaultService());
 

@@ -2,40 +2,44 @@
    STRUCTURE GÉNÉRALE
    =========================================== */
 
-/* Fenêtre principale */
-.root {
-    -fx-background-radius: 10px;
-    -fx-border-radius: 10px;
+/* Barre de titre custom (caption Windows remplacée, style IntelliJ) */
+.native-title-bar {
+    -fx-background-color: -color-bg-default;
 }
 
-/* Conteneur principal */
-.overlay {
-    -fx-background-radius: 0 0 10px 10px;
-}
-
-/* Barre de titre */
-.title-bar {
-    -fx-background-color: -color-accent-4;
-    -fx-background-radius: 10px 10px 0 0;
-    -fx-padding: 8px 10px;
-}
-
-.title-label {
-    -fx-text-fill: white;
+.native-title-bar .title-label {
+    -fx-text-fill: -color-fg-default;
     -fx-font-weight: bold;
-    -fx-font-size: 16px;
+    -fx-font-size: 13px;
 }
 
-/* Boutons de contrôle de la fenêtre */
-.control-button {
+/* Boutons caption min/max/close : plats, pleine hauteur, look Windows 11.
+   Le survol est piloté par le hit-test natif (pseudo-classe hover-native) :
+   :hover est conservé pour le mode fallback sans décoration native. */
+.caption-button {
     -fx-background-color: transparent;
-    -fx-background-radius: 50%;
-    -fx-padding: 5px;
-    -fx-cursor: hand;
+    -fx-background-radius: 0;
+    -fx-border-width: 0;
+    -fx-padding: 0;
 }
 
-.control-button:hover {
-    -fx-background-color: rgba(255, 255, 255, 0.2);
+.caption-button .ikonli-font-icon {
+    -fx-icon-color: -color-fg-default;
+}
+
+.caption-button:hover,
+.caption-button:hover-native {
+    -fx-background-color: -color-bg-subtle;
+}
+
+.caption-button-close:hover,
+.caption-button-close:hover-native {
+    -fx-background-color: #C42B1C;
+}
+
+.caption-button-close:hover .ikonli-font-icon,
+.caption-button-close:hover-native .ikonli-font-icon {
+    -fx-icon-color: white;
 }
 
 /* ===========================================

@@ -94,6 +94,19 @@
             <version>4.10.0-1.5.11</version>
         </dependency>
 
+        <!-- JNA (Win32: customization of the title bar through DWM/WndProc).
+             The jna version is locked to stay aligned with jna-platform, but Tess4J already provides it transitively. -->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>5.18.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>5.18.1</version>
+        </dependency>
+
         <!-- JNativeHook (keyboard hooks) -->
         <dependency>
             <groupId>com.github.kwhat</groupId>

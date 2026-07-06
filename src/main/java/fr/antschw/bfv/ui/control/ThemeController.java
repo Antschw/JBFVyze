@@ -4,6 +4,7 @@ import javafx.application.Application;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Consumer;
 import java.util.prefs.Preferences;
 
 /**
@@ -14,6 +15,7 @@ public class ThemeController {
     private static final String DARK_MODE_KEY = "darkMode";
 
     private static boolean darkMode = false;
+    private static Consumer<Boolean> onThemeChanged;
     private static final Preferences prefs = Preferences.userNodeForPackage(ThemeController.class);
 
     /**
@@ -63,6 +65,18 @@ public class ThemeController {
         } catch (Exception e) {
             LOGGER.error("Failed to apply theme", e);
         }
+
+        if (onThemeChanged != null) {
+            onThemeChanged.accept(darkMode);
+        }
+    }
+
+    /**
+     * Enregistre un écouteur notifié à chaque changement de thème
+     * (utilisé pour synchroniser le frame DWM natif).
+     */
+    public static void setOnThemeChanged(Consumer<Boolean> listener) {
+        onThemeChanged = listener;
     }
 
     /**

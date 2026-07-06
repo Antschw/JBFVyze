@@ -86,6 +86,8 @@ public final class AppConstants {
     public static final int WINDOW_HEIGHT = 600;
     /** Spacing used in the navigation bar. */
     public static final int NAVBAR_SPACING = 30;
+    /** Logical height of the custom title bar (native caption replacement). */
+    public static final int TITLE_BAR_HEIGHT = 40;
     /** Padding around the edges of the content pane. */
     public static final int WINDOW_PADDING = 20;
 }

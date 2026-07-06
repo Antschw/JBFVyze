@@ -6,6 +6,8 @@ import fr.antschw.bfv.domain.service.HotkeyListenerService;
 import fr.antschw.bfv.domain.service.UserStatsCacheService;
 import fr.antschw.bfv.infrastructure.binding.AppModule;
 import fr.antschw.bfv.infrastructure.cache.UserStatsCacheAdapter;
+import fr.antschw.bfv.infrastructure.window.TitleBarMetrics;
+import fr.antschw.bfv.infrastructure.window.WindowsTitleBarDecoration;
 import fr.antschw.bfv.ui.control.ThemeController;
 import fr.antschw.bfvocr.api.BFVOcrFactory;
 
@@ -64,7 +66,31 @@ public class BFVyzeApplication extends Application {
         primaryStage.setMinWidth(500);
         primaryStage.setMinHeight(400);
         primaryStage.setScene(scene);
+        mainController.getTitleBar().attachStage(primaryStage);
         primaryStage.show();
+
+        installNativeTitleBar(primaryStage, mainController);
+    }
+
+    /**
+     * Remplace la caption Windows par la barre de titre custom, en conservant
+     * tous les comportements natifs (Snap Layouts, resize, ombres, animations).
+     * En cas d'échec ou hors Windows, la barre de titre système est conservée.
+     */
+    private void installNativeTitleBar(Stage primaryStage, MainController mainController) {
+        if (!WindowsTitleBarDecoration.isSupported()) {
+            LOGGER.info("Native title bar decoration not supported on this platform, keeping system title bar");
+            return;
+        }
+        try {
+            WindowsTitleBarDecoration decoration = new WindowsTitleBarDecoration();
+            decoration.install(primaryStage, injector.getInstance(TitleBarMetrics.class));
+            decoration.setDarkMode(ThemeController.isDarkMode());
+            ThemeController.setOnThemeChanged(decoration::setDarkMode);
+            mainController.getTitleBar().setNativeDecorationActive(true);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to install native title bar decoration, keeping system title bar", e);
+        }
     }
 
     @Override
